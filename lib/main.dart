@@ -6,10 +6,10 @@ void main() => runApp(
     title: "DITECTA",
     home: Home(),
     theme: ThemeData(
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.greenAccent,
-        brightness: Brightness.dark,
+        seedColor: Color(0xFFFAFAF5),
+        brightness: Brightness.light,
       ),
     ),
   ),
