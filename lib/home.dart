@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Home extends StatefulWidget {
+  const Home({super.key});
+
+  @override
+  // ignore: library_private_types_in_public_api
   _HomeState createState() => _HomeState();
 }
 
@@ -20,11 +24,11 @@ class _HomeState extends State<Home> {
   }
 
   void _openCamera() {
-    var picture = ImagePicker().pickImage(source: ImageSource.camera);
+    ImagePicker().pickImage(source: ImageSource.camera);
   }
 
   void _openGallery() {
-    var picture = ImagePicker().pickImage(source: ImageSource.gallery);
+    ImagePicker().pickImage(source: ImageSource.gallery);
   }
 
   Future<void> _optionsDialogBox() {
