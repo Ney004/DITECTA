@@ -2,32 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Home extends StatefulWidget {
-  @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  final ImagePicker _picker = ImagePicker();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("DITECTA")),
       body: Center(
         child: ElevatedButton(
-          child: Text("Pick an image"),
           onPressed: _optionsDialogBox,
+          child: Text("Camera"),
         ),
       ),
     );
   }
 
-  void openCamera() async {
-    var picture = await _picker.pickImage(source: ImageSource.camera);
+  void _openCamera() {
+    var picture = ImagePicker().pickImage(source: ImageSource.camera);
   }
 
-  void openGallery() async {
-    var picture = await _picker.pickImage(source: ImageSource.gallery);
+  void _openGallery() {
+    var picture = ImagePicker().pickImage(source: ImageSource.gallery);
   }
 
   Future<void> _optionsDialogBox() {
@@ -35,17 +32,22 @@ class _HomeState extends State<Home> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          title: Text("Choose option"),
           content: SingleChildScrollView(
             child: ListBody(
-              children: [
+              children: <Widget>[
                 GestureDetector(
                   child: Text("Take a picture"),
-                  onTap: openCamera, //referencia, no llamada
+                  onTap: () {
+                    _openCamera();
+                  },
                 ),
                 Padding(padding: EdgeInsets.all(8.0)),
                 GestureDetector(
-                  child: Text("Choose from gallery"),
-                  onTap: openGallery, //referencia, no llamada
+                  child: Text("Select from gallery"),
+                  onTap: () {
+                    _openGallery();
+                  },
                 ),
               ],
             ),

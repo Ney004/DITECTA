@@ -7,8 +7,10 @@ void main() => runApp(
     home: Home(),
     theme: ThemeData(
       brightness: Brightness.dark,
-      primaryColor: Colors.green,
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.greenAccent),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.greenAccent,
+        brightness: Brightness.dark,
+      ),
     ),
   ),
 );
