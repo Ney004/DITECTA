@@ -14,21 +14,35 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFFAFAF5),
-        elevation: 6,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: const [
-            SizedBox(width: 10),
-            Text(
-              "DITECTA",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        backgroundColor: const Color(0xFFFAFAF5), // Fondo hueso/claro
+        elevation: 0, // Generalmente estos diseños limpios no llevan sombra
+        title: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "DITECTA",
+                style: TextStyle(
+                  color: Colors.green.shade400, // Color verde suave
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2, // Espaciado entre letras característico
+                ),
               ),
-            ),
-          ],
+              const Text(
+                "Hola, Granjero",
+                style: TextStyle(
+                  color: Color(
+                    0xFF323846,
+                  ), // Un azul oscuro/grisáceo casi negro
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: Center(
