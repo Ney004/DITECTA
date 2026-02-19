@@ -37,6 +37,7 @@ dependencies:
   image_picker: ^1.2.1
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.7
   flutter_test:
     sdk: flutter
 
@@ -47,6 +48,16 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+flutter_native_splash:
+  android: true
+  ios: true
+
+  color: "#FAFAF5"
+  image: assets/images/logo_ditecta.png
+
+  android_12:
+    color: "#FAFAF5"
+    image: assets/images/logo_ditecta.png
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
