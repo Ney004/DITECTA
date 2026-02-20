@@ -54,10 +54,12 @@ flutter_native_splash:
 
   color: "#FAFAF5"
   image: assets/images/logo_ditecta.png
+  branding: assets/images/branding.png
 
   android_12:
     color: "#FAFAF5"
     image: assets/images/logo_ditecta.png
+    branding: assets/images/branding.png
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

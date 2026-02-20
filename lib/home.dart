@@ -45,37 +45,114 @@ class _HomeState extends State<Home> {
           ),
         ),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: _optionsDialogBox,
-          style: ElevatedButton.styleFrom(
-            shape: CircleBorder(
-              side: BorderSide(
-                color: Colors.white, // contorno blanco
-                width: 6,
-              ),
-            ),
-            padding: EdgeInsets.all(40),
-            backgroundColor: Colors.green,
-            shadowColor: Colors.greenAccent,
-            elevation: 12,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+
+      body: Stack(
+        children: [
+          // Contenido superior (card)
+          Column(
             children: [
-              Icon(Icons.camera_alt, color: Colors.white, size: 50),
-              SizedBox(height: 10),
-              Text(
-                "EMPEZAR",
-                style: TextStyle(
+              Container(
+                height: 140,
+                margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Info clima
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "26°C",
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text("Humedad: 60%", style: TextStyle(fontSize: 14)),
+                        Text("Viento: 12 km/h", style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
+
+                    // Icono
+                    const Icon(
+                      Icons.wb_sunny_rounded,
+                      size: 60,
+                      color: Colors.orange,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
+
+          // Botón perfectamente centrado en pantalla
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Botón circular
+                ElevatedButton(
+                  onPressed: _optionsDialogBox,
+                  style: ElevatedButton.styleFrom(
+                    shape: const CircleBorder(
+                      side: BorderSide(color: Colors.white, width: 6),
+                    ),
+                    padding: const EdgeInsets.all(40),
+                    backgroundColor: Colors.green,
+                    shadowColor: Colors.greenAccent,
+                    elevation: 12,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.camera_alt, color: Colors.white, size: 50),
+                      SizedBox(height: 10),
+                      Text(
+                        "EMPEZAR",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Texto descriptivo
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 70),
+                  child: Text(
+                    "Apunta la cámara a las hojas de banano para una detección instantanea",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
