@@ -3,7 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/scan_button.dart';
 import '../widgets/recent_scans.dart';
+import '../data/scan_data.dart';
 import 'history.dart';
+import 'profile.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -13,30 +15,6 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final List<ScanItem> mockScans = [
-    ScanItem(
-      title: "North Plot #12",
-      timeAgo: "2H AGO",
-      status: "Healthy",
-      statusColor: Colors.green,
-      imagePath: "", // dejarlo vacío por ahora, mostrará icono
-    ),
-    ScanItem(
-      title: "West Boundary",
-      timeAgo: "YESTERDAY",
-      status: "Mild",
-      statusColor: Colors.orange,
-      imagePath: "",
-    ),
-    ScanItem(
-      title: "Seedling Section",
-      timeAgo: "OCT 12",
-      status: "Severe",
-      statusColor: Colors.red,
-      imagePath: "",
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,36 +58,38 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
+      body: ScrollConfiguration(
+        behavior: NoGlowScrollBehavior(),
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                const WeatherCard(),
+                const SizedBox(height: 24),
+                ScanButton(onPressed: _optionsDialogBox),
+                const SizedBox(height: 8),
+                const SizedBox(height: 32),
 
-              // Weather Card
-              const WeatherCard(),
+                // ← AGREGAR onViewAll callback
+                RecentScans(
+                  scans: ScanData.getRecentScans(),
+                  onViewAll: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const History()),
+                    );
+                  },
+                ),
 
-              const SizedBox(height: 24),
-
-              // Botón centrado
-              ScanButton(onPressed: _optionsDialogBox),
-
-              const SizedBox(height: 8),
-
-              const SizedBox(height: 32),
-
-              // Recent Scans
-              RecentScans(scans: mockScans),
-
-              const SizedBox(height: 80), // espacio para la barra inferior
-            ],
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
         ),
       ),
-
-      // Barra de navegación inferior (opcional)
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
@@ -117,26 +97,17 @@ class _HomeState extends State<Home> {
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
         onTap: (index) {
-          // Aquí puedes manejar la navegación entre pantallas
-          if (index == 0) {
-            // Home
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Home()),
-            );
-          } else if (index == 1) {
-            // Navegar a Historial
-            Navigator.push(
+          if (index == 1) {
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const History()),
             );
-          } /*else if (index == 2) {
-            // Navegar a Cuenta
-            Navigator.push(
+          } else if (index == 2) {
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const AccountScreen()),
+              MaterialPageRoute(builder: (context) => const Profile()),
             );
-          }*/
+          }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
@@ -193,6 +164,7 @@ class _HomeState extends State<Home> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(Icons.camera_alt, color: Color(0xFF416C18)),
                       SizedBox(width: 8),
                       Text(
                         "Tomar foto",
@@ -222,6 +194,7 @@ class _HomeState extends State<Home> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(Icons.photo_library, color: Color(0xFF416C18)),
                       SizedBox(width: 8),
                       Text(
                         "Elegir desde la galería",
@@ -239,5 +212,16 @@ class _HomeState extends State<Home> {
         );
       },
     );
+  }
+}
+
+class NoGlowScrollBehavior extends ScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
   }
 }

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../models/scan_model.dart';
+import '../data/scan_data.dart';
+import 'profile.dart';
+import 'home.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -8,48 +12,49 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  String selectedFilter = 'All';
+  String selectedFilter = 'Todos';
+  String searchQuery = '';
 
-  final List<HistoryItem> historyItems = [
-    HistoryItem(
-      title: "Black Sigatoka",
-      date: "Oct 24, 2025 • 10:30 AM",
-      severity: "MODERATE",
-      severityColor: Colors.orange,
-      imagePath: "",
-    ),
-    HistoryItem(
-      title: "No Diseases Detected",
-      date: "Oct 22, 2025 • 04:15 PM",
-      severity: "HEALTHY",
-      severityColor: Colors.green,
-      imagePath: "",
-    ),
-    HistoryItem(
-      title: "Fusarium Wilt",
-      date: "Oct 20, 2025 • 09:45 AM",
-      severity: "SEVERE",
-      severityColor: Colors.red,
-      imagePath: "",
-    ),
-    HistoryItem(
-      title: "Yellow Sigatoka",
-      date: "Oct 18, 2025 • 11:20 AM",
-      severity: "MILD",
-      severityColor: Colors.amber,
-      imagePath: "",
-    ),
-    HistoryItem(
-      title: "Banana Speckle",
-      date: "Oct 15, 2025 • 02:30 PM",
-      severity: "MODERATE",
-      severityColor: Colors.orange,
-      imagePath: "",
-    ),
-  ];
+  Color _getFilterColor(String filter) {
+    switch (filter) {
+      case 'Saludable':
+        return Colors.green;
+      case 'Medio':
+        return Colors.amber;
+      case 'Moderada':
+        return Colors.orange;
+      case 'Grave':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Método para filtrar los escaneos
+  List<ScanModel> _getFilteredScans() {
+    List<ScanModel> scans = ScanData.getAllScans();
+
+    // Filtrar por búsqueda
+    if (searchQuery.isNotEmpty) {
+      scans = scans.where((scan) {
+        return scan.title.toLowerCase().contains(searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    // Filtrar por severidad
+    if (selectedFilter != 'Todos') {
+      scans = scans.where((scan) {
+        return scan.severity == selectedFilter;
+      }).toList();
+    }
+
+    return scans;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final filteredScans = _getFilteredScans();
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAF5),
       appBar: AppBar(
@@ -57,10 +62,15 @@ class _HistoryState extends State<History> {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Home()),
+            );
+          },
         ),
         title: const Text(
-          "Scan History",
+          "Historial de Escaneos",
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -68,12 +78,6 @@ class _HistoryState extends State<History> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -82,10 +86,25 @@ class _HistoryState extends State<History> {
             color: Colors.white,
             padding: const EdgeInsets.all(16.0),
             child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
               decoration: InputDecoration(
-                hintText: "Search by date or disease...",
+                hintText: "Buscar por nombre",
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: Colors.green[600]),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () {
+                          setState(() {
+                            searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
                 filled: true,
                 fillColor: const Color(0xFFF5F5F5),
                 border: OutlineInputBorder(
@@ -101,46 +120,120 @@ class _HistoryState extends State<History> {
           Container(
             color: Colors.white,
             padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: "All",
-                  isSelected: selectedFilter == 'All',
-                  onTap: () => setState(() => selectedFilter = 'All'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Healthy",
-                  isSelected: selectedFilter == 'Healthy',
-                  onTap: () => setState(() => selectedFilter = 'Healthy'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Mild",
-                  isSelected: selectedFilter == 'Mild',
-                  onTap: () => setState(() => selectedFilter = 'Mild'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Moderate",
-                  isSelected: selectedFilter == 'Moderate',
-                  onTap: () => setState(() => selectedFilter = 'Moderate'),
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: "Todos",
+                    isSelected: selectedFilter == 'Todos',
+                    selectedColor: _getFilterColor('Todos'),
+                    onTap: () => setState(() => selectedFilter = 'Todos'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Saludable",
+                    isSelected: selectedFilter == 'Saludable',
+                    selectedColor: _getFilterColor('Saludable'),
+                    onTap: () => setState(() => selectedFilter = 'Saludable'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Medio",
+                    isSelected: selectedFilter == 'Medio',
+                    selectedColor: _getFilterColor('Medio'),
+                    onTap: () => setState(() => selectedFilter = 'Medio'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Moderada",
+                    isSelected: selectedFilter == 'Moderada',
+                    selectedColor: _getFilterColor('Moderada'),
+                    onTap: () => setState(() => selectedFilter = 'Moderada'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Grave",
+                    isSelected: selectedFilter == 'Grave',
+                    selectedColor: _getFilterColor('Grave'),
+                    onTap: () => setState(() => selectedFilter = 'Grave'),
+                  ),
+                ],
+              ),
             ),
           ),
 
           // HISTORY LIST
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: historyItems.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (_, index) {
-                return _HistoryCard(item: historyItems[index]);
-              },
-            ),
+            child: filteredScans.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No se encontraron resultados",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Intenta con otra búsqueda o filtro",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredScans.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (_, index) {
+                      return _HistoryCard(item: filteredScans[index]);
+                    },
+                  ),
           ),
+        ],
+      ),
+
+      // BARRA DE NAVEGACIÓN INFERIOR
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF416C18),
+        unselectedItemColor: Colors.grey,
+        currentIndex: 1,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Home()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Profile()),
+            );
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: "Historial",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cuenta"),
         ],
       ),
     );
@@ -151,11 +244,13 @@ class _HistoryState extends State<History> {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final Color selectedColor;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
     required this.isSelected,
+    required this.selectedColor,
     required this.onTap,
   });
 
@@ -166,10 +261,10 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.green : Colors.white,
+          color: isSelected ? selectedColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.green : Colors.grey[300]!,
+            color: isSelected ? selectedColor : Colors.grey[300]!,
             width: 1.5,
           ),
         ),
@@ -188,7 +283,7 @@ class _FilterChip extends StatelessWidget {
 
 // HISTORY CARD WIDGET
 class _HistoryCard extends StatelessWidget {
-  final HistoryItem item;
+  final ScanModel item;
 
   const _HistoryCard({required this.item});
 
@@ -280,7 +375,7 @@ class _HistoryCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      "View full report",
+                      "Ver Detalles",
                       style: TextStyle(
                         color: Colors.green[600],
                         fontWeight: FontWeight.w600,
@@ -302,21 +397,4 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// HISTORY ITEM MODEL
-class HistoryItem {
-  final String title;
-  final String date;
-  final String severity;
-  final Color severityColor;
-  final String imagePath;
-
-  HistoryItem({
-    required this.title,
-    required this.date,
-    required this.severity,
-    required this.severityColor,
-    required this.imagePath,
-  });
 }

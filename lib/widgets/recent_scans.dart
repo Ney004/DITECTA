@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import '../models/scan_model.dart';
 
 class RecentScans extends StatelessWidget {
-  final List<ScanItem> scans;
+  final List<ScanModel> scans;
+  final VoidCallback? onViewAll; // ← NUEVO parámetro
 
-  const RecentScans({super.key, required this.scans});
+  const RecentScans({
+    super.key,
+    required this.scans,
+    this.onViewAll, // ← OPCIONAL
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,19 +20,23 @@ class RecentScans extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              "Recent Scans",
+              "Escaneos Recientes",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF323846),
               ),
             ),
-            Text(
-              "VIEW ALL",
-              style: TextStyle(
-                color: Colors.green.shade600,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+            GestureDetector(
+              // ← Hacer clickeable
+              onTap: onViewAll,
+              child: Text(
+                "Ver Todos",
+                style: TextStyle(
+                  color: Colors.green.shade600,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
@@ -34,7 +44,7 @@ class RecentScans extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // LISTA VERTICAL SIN SCROLL PROPIO
+        // LISTA VERTICAL
         ...scans.map(
           (scan) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -46,24 +56,8 @@ class RecentScans extends StatelessWidget {
   }
 }
 
-class ScanItem {
-  final String title;
-  final String timeAgo;
-  final String status;
-  final Color statusColor;
-  final String imagePath;
-
-  ScanItem({
-    required this.title,
-    required this.timeAgo,
-    required this.status,
-    required this.statusColor,
-    required this.imagePath,
-  });
-}
-
 class _ScanCard extends StatelessWidget {
-  final ScanItem scan;
+  final ScanModel scan;
 
   const _ScanCard({required this.scan});
 
@@ -84,7 +78,6 @@ class _ScanCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // IMAGEN
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Container(
@@ -92,18 +85,11 @@ class _ScanCard extends StatelessWidget {
               height: 50,
               color: Colors.grey[200],
               child: scan.imagePath.isNotEmpty
-                  ? Image.asset(
-                      scan.imagePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          Icon(Icons.image, color: Colors.grey[400]),
-                    )
+                  ? Image.asset(scan.imagePath, fit: BoxFit.cover)
                   : Icon(Icons.eco, color: Colors.green[700], size: 28),
             ),
           ),
           const SizedBox(width: 12),
-
-          // TEXTO
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,13 +105,13 @@ class _ScanCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.circle, size: 8, color: scan.statusColor),
+                    Icon(Icons.circle, size: 8, color: scan.severityColor),
                     const SizedBox(width: 6),
                     Text(
-                      scan.status,
+                      scan.severity,
                       style: TextStyle(
                         fontSize: 13,
-                        color: scan.statusColor,
+                        color: scan.severityColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -134,8 +120,6 @@ class _ScanCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // FECHA
           Text(
             scan.timeAgo,
             style: TextStyle(
