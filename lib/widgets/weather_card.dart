@@ -7,7 +7,7 @@ class WeatherCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 140,
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      margin: const EdgeInsets.fromLTRB(5, 20, 5, 10),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -33,7 +33,7 @@ class WeatherCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
+                  color: Color(0xFF8fbc26),
                 ),
               ),
               SizedBox(height: 8),

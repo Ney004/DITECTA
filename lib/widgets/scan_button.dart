@@ -18,7 +18,7 @@ class ScanButton extends StatelessWidget {
               shape: const CircleBorder(
                 side: BorderSide(color: Colors.white, width: 6),
               ),
-              padding: const EdgeInsets.all(40),
+              padding: const EdgeInsets.all(70),
               backgroundColor: Colors.green,
               shadowColor: Colors.greenAccent,
               elevation: 12,
@@ -26,7 +26,7 @@ class ScanButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(Icons.camera_alt, color: Colors.white, size: 50),
+                Icon(Icons.camera_alt, color: Colors.white, size: 80),
                 SizedBox(height: 10),
                 Text(
                   "EMPEZAR",
@@ -46,7 +46,7 @@ class ScanButton extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 70),
             child: Text(
-              "Apunta la cámara a las hojas de banano para una detección instantánea",
+              "Apunta la cámara hacia las hojas para una detección instantánea",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.4),
             ),
