@@ -30,7 +30,7 @@ class _HomeState extends State<Home> {
               Text(
                 "DITECTA",
                 style: TextStyle(
-                  color: Colors.green.shade400,
+                  color: Color(0xFF8fbc26),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -164,7 +164,6 @@ class _HomeState extends State<Home> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt, color: Color(0xFF416C18)),
                       SizedBox(width: 8),
                       Text(
                         "Tomar foto",
@@ -194,7 +193,6 @@ class _HomeState extends State<Home> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.photo_library, color: Color(0xFF416C18)),
                       SizedBox(width: 8),
                       Text(
                         "Elegir desde la galería",

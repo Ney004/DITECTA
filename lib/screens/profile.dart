@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'history.dart';
 import 'home.dart';
+import 'history.dart';
 
 class Profile extends StatelessWidget {
   const Profile({super.key});
@@ -42,7 +42,7 @@ class Profile extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF416C18), width: 4),
+                border: Border.all(color: Color(0xFF416C18), width: 4),
               ),
               child: ClipOval(
                 child: Container(
@@ -56,12 +56,20 @@ class Profile extends StatelessWidget {
 
             // NOMBRE
             const Text(
-              "Whalter White",
+              "Walther White",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF323846),
               ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // CORREO (NUEVO)
+            Text(
+              "Heisenberg@gmail.com",
+              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
             ),
 
             const SizedBox(height: 32),
@@ -83,18 +91,6 @@ class Profile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // EDITAR PERFIL
-                  _SettingOption(
-                    icon: Icons.person,
-                    iconColor: Colors.green,
-                    title: "Editar Perfil",
-                    onTap: () {
-                      // Navegar a editar perfil
-                    },
-                  ),
-
-                  const Divider(height: 1),
 
                   // CENTRO DE AYUDA
                   _SettingOption(
@@ -173,25 +169,21 @@ class Profile extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF416C18),
+        selectedItemColor: Color(0xFF416C18),
         unselectedItemColor: Colors.grey,
-        currentIndex: 2, // ← Cuenta está seleccionado
+        currentIndex: 2,
         onTap: (index) {
           if (index == 0) {
-            // Navegar a Home
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const Home()),
             );
           } else if (index == 1) {
-            // Navegar a Historial
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const History()),
             );
-            // Navigator.push(...);
           }
-          // index == 2 ya estamos aquí (Cuenta)
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
@@ -199,7 +191,7 @@ class Profile extends StatelessWidget {
             icon: Icon(Icons.history),
             label: "Historial",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cuenta"),
         ],
       ),
     );
@@ -216,15 +208,9 @@ class Profile extends StatelessWidget {
           ),
           title: const Text(
             "Cerrar Sesión",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF416C18),
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
-            "¿Estás seguro que deseas cerrar sesión?",
-            style: TextStyle(color: Color(0xFF2A2E38)),
-          ),
+          content: const Text("¿Estás seguro que deseas cerrar sesión?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -235,9 +221,8 @@ class Profile extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Cerrar diálogo
+                Navigator.pop(context);
                 // Aquí implementarías la lógica de cerrar sesión
-                // Por ejemplo: Navigator.pushReplacementNamed(context, '/login');
               },
               child: const Text(
                 "Cerrar Sesión",
@@ -279,9 +264,7 @@ class _SettingOption extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: iconColor == Colors.green
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.grey.withValues(alpha: 0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: iconColor, size: 20),
