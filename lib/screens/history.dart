@@ -56,7 +56,7 @@ class _HistoryState extends State<History> {
     final filteredScans = _getFilteredScans();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAF5),
+      backgroundColor: const Color(0xFFfafaf5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -186,7 +186,7 @@ class _HistoryState extends State<History> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Intenta con otra búsqueda o filtro",
+                          "Intenta con otra búsqueda",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[500],
