@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   image_picker: ^1.2.1
   flutter_launcher_icons: ^0.14.4
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_native_splash: ^2.4.7
@@ -111,3 +112,4 @@ flutter:
   # see https://flutter.dev/to/font-from-package
   assets:
     - assets/images/logo_ditecta.png
+    - assets/icons/icon_logo.png

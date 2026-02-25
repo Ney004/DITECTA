@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "783989135417",
+    "project_id": "lucy-b601c",
+    "storage_bucket": "lucy-b601c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:783989135417:android:451f82d4107cfd47cf55e8",
+        "android_client_info": {
+          "package_name": "com.example.lucy_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "783989135417-kufpmpa5h248pfn1m7glm7rbukofohre.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lucy_project",
+            "certificate_hash": "ce6f7a2f07aeb6a3c5d6f8cf748c7800c00be1ec"
+          }
+        },
+        {
+          "client_id": "783989135417-s0426iumg35m8308e4f890sdbfcri9jm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoBE0G629Q1o0VhvK4kCPulrrs18MvhhY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "783989135417-s0426iumg35m8308e4f890sdbfcri9jm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

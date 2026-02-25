@@ -1,9 +1,58 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import 'home.dart';
 import 'history.dart';
+import 'login.dart';
 
-class Profile extends StatelessWidget {
+class Profile extends StatefulWidget {
   const Profile({super.key});
+
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  final AuthService _authService = AuthService();
+
+  String _userName = "Cargando...";
+  String _userEmail = "Cargando...";
+  String? _userPhotoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    debugPrint('Intentando cargar datos del usuario...');
+
+    var user = _authService.currentUser;
+    debugPrint('currentUser: $user');
+
+    if (user == null) {
+      debugPrint('currentUser es null, intentando getCurrentUser()');
+      user = await _authService.getCurrentUser();
+      debugPrint('getCurrentUser result: $user');
+    }
+
+    if (user != null && mounted) {
+      debugPrint('Usuario encontrado: ${user.email}');
+      setState(() {
+        _userName = user!.displayName ?? "Usuario";
+        _userEmail = user.email;
+        _userPhotoUrl = user.photoUrl;
+      });
+    } else {
+      debugPrint('No hay usuario autenticado, volviendo al login');
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Login()),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +79,14 @@ class Profile extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.black),
+            onPressed: () {
+              // Acción de configuración
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -42,22 +99,52 @@ class Profile extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Color(0xFF416C18), width: 4),
+                border: Border.all(color: Colors.green, width: 4),
               ),
               child: ClipOval(
-                child: Container(
-                  color: Colors.green[100],
-                  child: Icon(Icons.person, size: 60, color: Color(0xFF8FBC26)),
-                ),
+                child: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
+                    ? Image.network(
+                        _userPhotoUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.green[100],
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.green[100],
+                            child: Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.green[700],
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.green[100],
+                        child: Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.green[700],
+                        ),
+                      ),
               ),
             ),
 
             const SizedBox(height: 16),
 
             // NOMBRE
-            const Text(
-              "Walther White",
-              style: TextStyle(
+            Text(
+              _userName,
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF323846),
@@ -66,9 +153,9 @@ class Profile extends StatelessWidget {
 
             const SizedBox(height: 4),
 
-            // CORREO (NUEVO)
+            // CORREO
             Text(
-              "Heisenberg@gmail.com",
+              _userEmail,
               style: TextStyle(fontSize: 15, color: Colors.grey[600]),
             ),
 
@@ -134,12 +221,12 @@ class Profile extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.logout, color: Colors.red),
-                    const SizedBox(width: 8),
-                    const Text(
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text(
                       "Cerrar Sesión",
                       style: TextStyle(
                         color: Colors.red,
@@ -156,7 +243,7 @@ class Profile extends StatelessWidget {
 
             // VERSIÓN
             Text(
-              "DITECTA v1.0.0",
+              "Banana Health Pro v2.4.0",
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
 
@@ -169,7 +256,7 @@ class Profile extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF416C18),
+        selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         currentIndex: 2,
         onTap: (index) {
@@ -220,9 +307,17 @@ class Profile extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Aquí implementarías la lógica de cerrar sesión
+              onPressed: () async {
+                // Cerrar sesión
+                await _authService.signOut();
+
+                if (!context.mounted) return;
+
+                Navigator.pop(context); // Cerrar diálogo
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                );
               },
               child: const Text(
                 "Cerrar Sesión",
