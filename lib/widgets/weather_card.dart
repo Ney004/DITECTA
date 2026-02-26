@@ -9,7 +9,7 @@ class WeatherCard extends StatefulWidget {
 }
 
 class _WeatherCardState extends State<WeatherCard> {
-  final WeatherService _weatherService = WeatherService();
+  final WeatherService _weatherService = WeatherService(); // ← DESCOMENTAR
   WeatherData? _weatherData;
   bool _isLoading = true;
 
@@ -20,19 +20,13 @@ class _WeatherCardState extends State<WeatherCard> {
   }
 
   Future<void> _loadWeather() async {
-    // TEMPORAL: Datos de prueba
-    await Future.delayed(Duration(seconds: 1));
+    final weather = await _weatherService.getWeather(
+      'Medellin,CO',
+    ); // ← DESCOMENTAR
 
     if (mounted) {
       setState(() {
-        _weatherData = WeatherData(
-          temperature: 26.0,
-          humidity: 60,
-          windSpeed: 12.0,
-          description: "parcialmente nublado",
-          icon: "02d",
-          cityName: "Medellín",
-        );
+        _weatherData = weather;
         _isLoading = false;
       });
     }
