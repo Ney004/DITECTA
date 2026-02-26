@@ -4,6 +4,7 @@ import '../widgets/weather_card.dart';
 import '../widgets/scan_button.dart';
 import '../widgets/recent_scans.dart';
 import '../data/scan_data.dart';
+import '../services/auth_service.dart'; // ← AGREGAR
 import 'history.dart';
 import 'profile.dart';
 
@@ -15,6 +16,30 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final AuthService _authService = AuthService(); // ← AGREGAR
+  String? _userPhotoUrl; // ← AGREGAR
+  String _userName = "Granjero"; // ← AGREGAR
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // ← AGREGAR
+  }
+
+  // ← AGREGAR ESTE MÉTODO
+  Future<void> _loadUserData() async {
+    var user = _authService.currentUser;
+
+    user ??= await _authService.getCurrentUser();
+
+    if (user != null && mounted) {
+      setState(() {
+        _userPhotoUrl = user!.photoUrl;
+        _userName = user.displayName?.split(' ')[0] ?? "Granjero";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,8 +61,8 @@ class _HomeState extends State<Home> {
                   letterSpacing: 1.2,
                 ),
               ),
-              const Text(
-                "Hola, Granjero",
+              Text(
+                "Hola, $_userName", // ← CAMBIAR
                 style: TextStyle(
                   color: Color(0xFF323846),
                   fontSize: 22,
@@ -50,10 +75,25 @@ class _HomeState extends State<Home> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.green[100],
-              child: Icon(Icons.person, color: Colors.green[700], size: 20),
+            child: GestureDetector(
+              // ← CAMBIAR InkWell por GestureDetector
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Profile()),
+                );
+              },
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Color(0xFFE8F5E9),
+                backgroundImage:
+                    _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
+                    ? NetworkImage(_userPhotoUrl!) // ← AGREGAR
+                    : null,
+                child: _userPhotoUrl == null || _userPhotoUrl!.isEmpty
+                    ? Icon(Icons.person, color: Color(0xFF8fbc26), size: 20)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -73,7 +113,6 @@ class _HomeState extends State<Home> {
                 const SizedBox(height: 8),
                 const SizedBox(height: 32),
 
-                // ← AGREGAR onViewAll callback
                 RecentScans(
                   scans: ScanData.getRecentScans(),
                   onViewAll: () {
@@ -93,7 +132,7 @@ class _HomeState extends State<Home> {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF416C18),
+        selectedItemColor: const Color(0xFF8fbc26),
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
         onTap: (index) {
@@ -140,9 +179,11 @@ class _HomeState extends State<Home> {
           backgroundColor: const Color(0xFFFAFAF5),
           title: const Text(
             "Seleccione una opción",
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF416c18),
+              color: Color(0xFF8fbc26),
+              fontSize: 20,
             ),
           ),
           content: Column(
@@ -168,7 +209,7 @@ class _HomeState extends State<Home> {
                       Text(
                         "Tomar foto",
                         style: TextStyle(
-                          color: Color(0xFF416C18),
+                          color: Color(0xFF8fbc26),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -197,7 +238,7 @@ class _HomeState extends State<Home> {
                       Text(
                         "Elegir desde la galería",
                         style: TextStyle(
-                          color: Color(0xFF416C18),
+                          color: Color(0xFF8fbc26),
                           fontWeight: FontWeight.w600,
                         ),
                       ),

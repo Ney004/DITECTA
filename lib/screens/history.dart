@@ -94,7 +94,7 @@ class _HistoryState extends State<History> {
               decoration: InputDecoration(
                 hintText: "Buscar por nombre",
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Colors.green[600]),
+                prefixIcon: Icon(Icons.search, color: Color(0xff8fbc26)),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: Colors.grey),
@@ -211,7 +211,7 @@ class _HistoryState extends State<History> {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF416C18),
+        selectedItemColor: const Color(0xFF8fbc26),
         unselectedItemColor: Colors.grey,
         currentIndex: 1,
         onTap: (index) {

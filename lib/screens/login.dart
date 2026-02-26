@@ -33,7 +33,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5DC),
+      backgroundColor: const Color(0xFFFafaf5),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -43,14 +43,18 @@ class _LoginState extends State<Login> {
               children: [
                 // LOGO
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Color(0xFFFAFAF5),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Center(
-                    child: Icon(Icons.eco, size: 50, color: Colors.green),
+                    child: Image.asset(
+                      'assets/icons/icon_logo.png',
+                      width: 250,
+                      height: 250,
+                    ),
                   ),
                 ),
 
@@ -67,10 +71,10 @@ class _LoginState extends State<Login> {
                       height: 1.2,
                     ),
                     children: [
-                      const TextSpan(text: "Bienvenido a\n"),
+                      const TextSpan(text: "Bienvenido a "),
                       TextSpan(
                         text: "DITECTA",
-                        style: TextStyle(color: Colors.green[700]),
+                        style: TextStyle(color: Color(0xFF416c18)),
                       ),
                     ],
                   ),
@@ -80,7 +84,7 @@ class _LoginState extends State<Login> {
 
                 // SUBTÍTULO
                 Text(
-                  "Análisis inteligente para tus\ncultivos de banano.",
+                  "Análisis inteligente para tus cultivos de banano y platano.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -166,7 +170,7 @@ class _LoginState extends State<Login> {
                       TextSpan(
                         text: "Términos de Servicio",
                         style: TextStyle(
-                          color: Colors.green[700],
+                          color: Color(0xFF8FBC26),
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
                         ),
@@ -175,7 +179,7 @@ class _LoginState extends State<Login> {
                       TextSpan(
                         text: "Política de Privacidad",
                         style: TextStyle(
-                          color: Colors.green[700],
+                          color: Color(0xFF8FBC26),
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
                         ),

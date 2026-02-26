@@ -79,14 +79,6 @@ class _ProfileState extends State<Profile> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black),
-            onPressed: () {
-              // Acción de configuración
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -99,7 +91,7 @@ class _ProfileState extends State<Profile> {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.green, width: 4),
+                border: Border.all(color: Color(0xFF8fbc26), width: 5),
               ),
               child: ClipOval(
                 child: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
@@ -109,31 +101,31 @@ class _ProfileState extends State<Profile> {
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return Container(
-                            color: Colors.green[100],
+                            color: Color(0xFFE8F5E9),
                             child: Center(
                               child: CircularProgressIndicator(
-                                color: Colors.green[700],
+                                color: Color(0xFF416C18),
                               ),
                             ),
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            color: Colors.green[100],
+                            color: Color(0xFFE8F5E9),
                             child: Icon(
                               Icons.person,
                               size: 60,
-                              color: Colors.green[700],
+                              color: Color(0xFF416C18),
                             ),
                           );
                         },
                       )
                     : Container(
-                        color: Colors.green[100],
+                        color: Color(0xFFE8F5E9),
                         child: Icon(
                           Icons.person,
                           size: 60,
-                          color: Colors.green[700],
+                          color: Color(0xFF416C18),
                         ),
                       ),
               ),
@@ -156,7 +148,7 @@ class _ProfileState extends State<Profile> {
             // CORREO
             Text(
               _userEmail,
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 15, color: Color(0xFF757575)),
             ),
 
             const SizedBox(height: 32),
@@ -173,7 +165,7 @@ class _ProfileState extends State<Profile> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+                      color: Color(0xFF757575),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -182,7 +174,7 @@ class _ProfileState extends State<Profile> {
                   // CENTRO DE AYUDA
                   _SettingOption(
                     icon: Icons.help_outline,
-                    iconColor: Colors.grey[600]!,
+                    iconColor: Color(0xFF8fbc26),
                     title: "Centro de Ayuda",
                     onTap: () {
                       // Navegar a centro de ayuda
@@ -194,7 +186,7 @@ class _ProfileState extends State<Profile> {
                   // ACERCA DE LA APP
                   _SettingOption(
                     icon: Icons.info_outline,
-                    iconColor: Colors.grey[600]!,
+                    iconColor: Color(0xFF8fbc26),
                     title: "Acerca de la App",
                     onTap: () {
                       // Navegar a acerca de la app
@@ -243,8 +235,8 @@ class _ProfileState extends State<Profile> {
 
             // VERSIÓN
             Text(
-              "Banana Health Pro v2.4.0",
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              "DITECTA v1.0.0",
+              style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
             ),
 
             const SizedBox(height: 80),
@@ -256,7 +248,7 @@ class _ProfileState extends State<Profile> {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
+        selectedItemColor: Color(0xFF8fbc26),
         unselectedItemColor: Colors.grey,
         currentIndex: 2,
         onTap: (index) {
@@ -295,9 +287,17 @@ class _ProfileState extends State<Profile> {
           ),
           title: const Text(
             "Cerrar Sesión",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF8fbc26),
+              fontSize: 20,
+              height: 1.2,
+            ),
           ),
-          content: const Text("¿Estás seguro que deseas cerrar sesión?"),
+          content: const Text(
+            "¿Estás seguro que deseas cerrar sesión?",
+            style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

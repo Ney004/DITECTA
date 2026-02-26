@@ -33,7 +33,7 @@ class RecentScans extends StatelessWidget {
               child: Text(
                 "Ver Todos",
                 style: TextStyle(
-                  color: Colors.green.shade600,
+                  color: Color(0xFF8FBC26),
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),

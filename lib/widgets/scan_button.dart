@@ -19,7 +19,7 @@ class ScanButton extends StatelessWidget {
                 side: BorderSide(color: Colors.white, width: 6),
               ),
               padding: const EdgeInsets.all(70),
-              backgroundColor: Colors.green,
+              backgroundColor: const Color(0xFF4CAF50),
               shadowColor: Colors.greenAccent,
               elevation: 12,
             ),
@@ -44,7 +44,7 @@ class ScanButton extends StatelessWidget {
 
           // Texto descriptivo
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 70),
+            padding: EdgeInsets.symmetric(horizontal: 50),
             child: Text(
               "Apunta la cámara hacia las hojas para una detección instantánea",
               textAlign: TextAlign.center,
