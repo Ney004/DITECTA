@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "783989135417-joa5t80n60cmib80hm4cobdorh2abc3p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lucy_project",
+            "certificate_hash": "e02a2dd17abe2fc478b07074c849763ccb80f08c"
+          }
+        },
+        {
           "client_id": "783989135417-kufpmpa5h248pfn1m7glm7rbukofohre.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
