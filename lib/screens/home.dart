@@ -47,6 +47,7 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFfafaf5),
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Column(

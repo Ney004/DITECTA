@@ -72,7 +72,7 @@ class _HistoryState extends State<History> {
         title: const Text(
           "Historial de Escaneos",
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF323846),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
