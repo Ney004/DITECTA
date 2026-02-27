@@ -3,6 +3,11 @@ import '../services/auth_service.dart';
 import 'home.dart';
 import 'history.dart';
 import 'login.dart';
+import '../screens/settings/about_app.dart';
+import '../screens/settings/terms_conditions.dart';
+import '../screens/settings/privacy_policy.dart';
+import '../screens/settings/report_problem.dart';
+import '../screens/settings/notification_settings.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -25,26 +30,17 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _loadUserData() async {
-    debugPrint('Intentando cargar datos del usuario...');
-
     var user = _authService.currentUser;
-    debugPrint('currentUser: $user');
 
-    if (user == null) {
-      debugPrint('currentUser es null, intentando getCurrentUser()');
-      user = await _authService.getCurrentUser();
-      debugPrint('getCurrentUser result: $user');
-    }
+    user ??= await _authService.getCurrentUser();
 
     if (user != null && mounted) {
-      debugPrint('Usuario encontrado: ${user.email}');
       setState(() {
         _userName = user!.displayName ?? "Usuario";
         _userEmail = user.email;
         _userPhotoUrl = user.photoUrl;
       });
     } else {
-      debugPrint('No hay usuario autenticado, volviendo al login');
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -59,7 +55,7 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFFAFAF5),
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -91,7 +87,7 @@ class _ProfileState extends State<Profile> {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Color(0xFF8fbc26), width: 5),
+                border: Border.all(color: Color(0xFF8fbc18), width: 4),
               ),
               child: ClipOval(
                 child: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
@@ -101,31 +97,31 @@ class _ProfileState extends State<Profile> {
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return Container(
-                            color: Color(0xFFE8F5E9),
+                            color: Colors.green[100],
                             child: Center(
                               child: CircularProgressIndicator(
-                                color: Color(0xFF416C18),
+                                color: Colors.green[700],
                               ),
                             ),
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            color: Color(0xFFE8F5E9),
+                            color: Colors.green[100],
                             child: Icon(
                               Icons.person,
                               size: 60,
-                              color: Color(0xFF416C18),
+                              color: Colors.green[700],
                             ),
                           );
                         },
                       )
                     : Container(
-                        color: Color(0xFFE8F5E9),
+                        color: Colors.green[100],
                         child: Icon(
                           Icons.person,
                           size: 60,
-                          color: Color(0xFF416C18),
+                          color: Colors.green[700],
                         ),
                       ),
               ),
@@ -148,7 +144,7 @@ class _ProfileState extends State<Profile> {
             // CORREO
             Text(
               _userEmail,
-              style: TextStyle(fontSize: 15, color: Color(0xFF757575)),
+              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
             ),
 
             const SizedBox(height: 32),
@@ -165,31 +161,145 @@ class _ProfileState extends State<Profile> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF757575),
+                      color: Colors.grey[600],
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
 
-                  // CENTRO DE AYUDA
+                  // NOTIFICACIONES
                   _SettingOption(
-                    icon: Icons.help_outline,
-                    iconColor: Color(0xFF8fbc26),
-                    title: "Centro de Ayuda",
+                    icon: Icons.notifications_outlined,
+                    iconColor: const Color(0xFF8fbc18),
+                    title: "Notificaciones",
                     onTap: () {
-                      // Navegar a centro de ayuda
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationSettings(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // SECCIÓN INFORMACIÓN Y SOPORTE
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "INFORMACIÓN Y SOPORTE",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ACERCA DE LA APP
+                  _SettingOption(
+                    icon: Icons.info_outline,
+                    iconColor: Color(0XFF8fbc18),
+                    title: "Acerca de la App",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutApp(),
+                        ),
+                      );
                     },
                   ),
 
                   const Divider(height: 1),
 
-                  // ACERCA DE LA APP
+                  // TÉRMINOS Y CONDICIONES
                   _SettingOption(
-                    icon: Icons.info_outline,
-                    iconColor: Color(0xFF8fbc26),
-                    title: "Acerca de la App",
+                    icon: Icons.description_outlined,
+                    iconColor: Color(0XFF8fbc18),
+                    title: "Términos y Condiciones",
                     onTap: () {
-                      // Navegar a acerca de la app
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TermsConditions(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const Divider(height: 1),
+
+                  // POLÍTICA DE PRIVACIDAD
+                  _SettingOption(
+                    icon: Icons.privacy_tip_outlined,
+                    iconColor: Color(0xFF8fbc18),
+                    title: "Política de Privacidad",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicy(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const Divider(height: 1),
+
+                  // REPORTAR UN PROBLEMA
+                  _SettingOption(
+                    icon: Icons.bug_report_outlined,
+                    iconColor: Color(0xFF8fbc18),
+                    title: "Reportar un Problema",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportProblem(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // BORRAR HISTORIAL
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "DATOS",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  _SettingOption(
+                    icon: Icons.delete_outline,
+                    iconColor: Colors.red,
+                    title: "Borrar Historial",
+                    onTap: () {
+                      _showDeleteHistoryDialog(context);
                     },
                   ),
                 ],
@@ -236,7 +346,7 @@ class _ProfileState extends State<Profile> {
             // VERSIÓN
             Text(
               "DITECTA v1.0.0",
-              style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
 
             const SizedBox(height: 80),
@@ -246,9 +356,9 @@ class _ProfileState extends State<Profile> {
 
       // BARRA DE NAVEGACIÓN INFERIOR
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFFAFAF5),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF8fbc26),
+        selectedItemColor: Color(0XFF8fbc18),
         unselectedItemColor: Colors.grey,
         currentIndex: 2,
         onTap: (index) {
@@ -276,6 +386,65 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  // Diálogo de confirmación para borrar historial
+  void _showDeleteHistoryDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0XFF8fbc18),
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Text(
+                "Borrar Historial",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            "¿Estás seguro que deseas borrar todo tu historial de escaneos? Esta acción no se puede deshacer.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Aquí implementarías la lógica para borrar historial
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Historial borrado correctamente"),
+                    backgroundColor: Color(0xFF8fbc18),
+                  ),
+                );
+              },
+              child: const Text(
+                "Borrar",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Diálogo de confirmación para cerrar sesión
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -287,17 +456,9 @@ class _ProfileState extends State<Profile> {
           ),
           title: const Text(
             "Cerrar Sesión",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF8fbc26),
-              fontSize: 20,
-              height: 1.2,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
-            "¿Estás seguro que deseas cerrar sesión?",
-            style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
-          ),
+          content: const Text("¿Estás seguro que deseas cerrar sesión?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -308,12 +469,11 @@ class _ProfileState extends State<Profile> {
             ),
             TextButton(
               onPressed: () async {
-                // Cerrar sesión
                 await _authService.signOut();
 
                 if (!context.mounted) return;
 
-                Navigator.pop(context); // Cerrar diálogo
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const Login()),
@@ -359,7 +519,7 @@ class _SettingOption extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: iconColor, size: 20),

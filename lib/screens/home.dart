@@ -183,7 +183,7 @@ class _HomeState extends State<Home> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF8fbc26),
+              color: Color(0xFF323846),
               fontSize: 20,
             ),
           ),
