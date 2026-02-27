@@ -45,7 +45,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       backgroundColor: const Color(0xFFfafaf5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFafaf5),
+        backgroundColor: const Color(0xFFfafaf5),
         elevation: 0,
         title: Padding(
           padding: const EdgeInsets.only(left: 8.0),
@@ -209,7 +209,7 @@ class _HomeState extends State<Home> {
                       Text(
                         "Tomar foto",
                         style: TextStyle(
-                          color: Color(0xFF8fbc26),
+                          color: Color(0xFF323846),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -238,7 +238,7 @@ class _HomeState extends State<Home> {
                       Text(
                         "Elegir desde la galería",
                         style: TextStyle(
-                          color: Color(0xFF8fbc26),
+                          color: Color(0xFF323846),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
