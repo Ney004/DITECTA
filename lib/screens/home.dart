@@ -7,6 +7,7 @@ import '../data/scan_data.dart';
 import '../services/auth_service.dart'; // ← AGREGAR
 import 'history.dart';
 import 'profile.dart';
+import 'camera_screen.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,7 +19,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final AuthService _authService = AuthService(); // ← AGREGAR
   String? _userPhotoUrl; // ← AGREGAR
-  String _userName = "Granjero"; // ← AGREGAR
+  String _userName = "Agricultor"; // ← AGREGAR
 
   @override
   void initState() {
@@ -35,7 +36,12 @@ class _HomeState extends State<Home> {
     if (user != null && mounted) {
       setState(() {
         _userPhotoUrl = user!.photoUrl;
-        _userName = user.displayName?.split(' ')[0] ?? "Granjero";
+        _userName = user.displayName?.split(' ')[0] ?? "Agricultor";
+      });
+    } else {
+      setState(() {
+        _userName = "Agricultor";
+        _userPhotoUrl = null;
       });
     }
   }
@@ -161,12 +167,47 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _openCamera() {
-    ImagePicker().pickImage(source: ImageSource.camera);
+  Future<void> _openCamera() async {
+    final imagePath = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const CameraScreen()),
+    );
+
+    if (imagePath != null && mounted) {
+      // Aquí procesarías la imagen capturada
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Foto capturada: $imagePath'),
+          backgroundColor: const Color(0xFF8fbc18),
+        ),
+      );
+
+      //Enviar a procesamiento de IA
+      //Mostrar pantalla de resultados
+    }
   }
 
-  void _openGallery() {
-    ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _openGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
+
+    if (image != null && mounted) {
+      // Aquí procesarías la imagen seleccionada
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Imagen seleccionada: ${image.path}'),
+          backgroundColor: const Color(0xFF8fbc18),
+        ),
+      );
+
+      // Enviar a procesamiento de IA
+      // Mostrar pantalla de resultados
+    }
   }
 
   Future<void> _optionsDialogBox() {

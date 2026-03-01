@@ -84,11 +84,16 @@ class AboutApp extends StatelessWidget {
                 children: [
                   const Text(
                     "Sobre DITECTA",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8fbc18),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "DITECTA es una aplicación móvil diseñada para ayudar a los agricultores a detectar y prevenir enfermedades en cultivos de banano mediante análisis inteligente con inteligencia artificial.",
+                    "DITECTA es una aplicación móvil diseña para la detección de Sigatoka en matas de banano y platano, basada en inteligencia artificial para analizar imágenes y proporcionar diagnóstico.",
+                    textAlign: TextAlign.justify,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[700],
@@ -98,13 +103,23 @@ class AboutApp extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text(
                     "Características:",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8fbc18),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  _Feature(text: "Detección instantánea de enfermedades"),
-                  _Feature(text: "Historial de escaneos"),
-                  _Feature(text: "Alertas climáticas"),
-                  _Feature(text: "Recomendaciones de tratamiento"),
+                  Text(
+                    "Análisis de imágenes para detección temprana de Sigatoka.\n\n"
+                    "Resultados basados en inteligencia artificial.\n\n"
+                    "Interfaz diseñada para un uso facil y rápido en el campo.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -123,14 +138,21 @@ class AboutApp extends StatelessWidget {
                 children: [
                   const Text(
                     "Contacto",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8fbc18),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _ContactItem(
                     icon: Icons.email_outlined,
-                    text: "support@ditecta.com",
+                    text: "ditectaSoporte@gmail.com",
                   ),
-                  _ContactItem(icon: Icons.language, text: "www.ditecta.com"),
+                  _ContactItem(
+                    icon: Icons.phone_android_outlined,
+                    text: "+57 311 663 0355",
+                  ),
                 ],
               ),
             ),
@@ -138,37 +160,12 @@ class AboutApp extends StatelessWidget {
             const SizedBox(height: 24),
 
             Text(
-              "© 2025 DITECTA. Todos los derechos reservados.",
+              "DITECTA. Todos los derechos reservados.",
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Feature extends StatelessWidget {
-  final String text;
-
-  const _Feature({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, size: 20, color: Color(0xFF8fbc18)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-            ),
-          ),
-        ],
       ),
     );
   }

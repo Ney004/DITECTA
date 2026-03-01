@@ -17,7 +17,7 @@ class TermsConditions extends StatelessWidget {
         title: const Text(
           "Términos y Condiciones",
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xff323846),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -37,12 +37,11 @@ class TermsConditions extends StatelessWidget {
             children: [
               const Text(
                 "Términos y Condiciones de Uso",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Última actualización: Febrero 2025",
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF8fbc18),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -55,31 +54,25 @@ class TermsConditions extends StatelessWidget {
               _Section(
                 title: "2. Uso de la Aplicación",
                 content:
-                    "DITECTA está diseñada para ayudar en la detección de enfermedades en cultivos de banano. Los resultados proporcionados son orientativos y no sustituyen el diagnóstico profesional de un agrónomo certificado.",
+                    "DITECTA está diseñada para ayudar en la detección de Sigatoka en cultivos de banano y platano. La aplicación no debe ser utilizada como única fuente de diagnóstico o tratamiento. Se recomienda siempre consultar con expertos agrícolas para decisiones críticas.",
               ),
 
               _Section(
                 title: "3. Responsabilidad",
                 content:
-                    "DITECTA no se hace responsable de las decisiones tomadas basadas únicamente en los resultados de la aplicación. Se recomienda siempre consultar con expertos agrícolas para decisiones críticas.",
+                    "DITECTA no se hace responsable de las decisiones tomadas basadas únicamente en los resultados de la aplicación.",
               ),
 
               _Section(
                 title: "4. Propiedad Intelectual",
                 content:
-                    "Todo el contenido, diseño y funcionalidad de DITECTA son propiedad exclusiva de sus creadores y están protegidos por leyes de propiedad intelectual.",
+                    "Todo el contenido, diseño y funcionalidad de DITECTA son propiedad exclusiva de su creador.",
               ),
 
               _Section(
                 title: "5. Privacidad",
                 content:
                     "El uso de sus datos personales se rige por nuestra Política de Privacidad. Al usar DITECTA, acepta la recopilación y uso de información de acuerdo con dicha política.",
-              ),
-
-              _Section(
-                title: "6. Modificaciones",
-                content:
-                    "Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios serán efectivos al publicarse en la aplicación.",
               ),
 
               const SizedBox(height: 24),
@@ -99,7 +92,7 @@ class TermsConditions extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "Para más información, contacte a support@ditecta.com",
+                        "Para más información, contacte a ditectaSoporte@gmail.com",
                         style: TextStyle(fontSize: 13, color: Colors.grey[800]),
                       ),
                     ),

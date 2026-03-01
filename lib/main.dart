@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-//import 'screens/home.dart';
-import 'screens/login.dart';
+import 'screens/home.dart';
 
 void main() => runApp(
   MaterialApp(
     title: "DITECTA",
-    home: const Login(),
+    home: const Home(),
     theme: ThemeData(
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(

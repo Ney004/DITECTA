@@ -32,13 +32,19 @@ class _ReportProblemState extends State<ReportProblem> {
           ),
           title: const Row(
             children: [
-              Icon(Icons.check_circle, color: Color(0xFF8fbc18), size: 28),
               SizedBox(width: 12),
-              Text("Reporte Enviado"),
+              Text(
+                "Reporte Enviado",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF323846),
+                ),
+              ),
             ],
           ),
           content: const Text(
             "Gracias por tu reporte. Nuestro equipo lo revisará pronto.",
+            style: TextStyle(fontSize: 14, color: Color(0xFF323846)),
           ),
           actions: [
             TextButton(
@@ -48,7 +54,7 @@ class _ReportProblemState extends State<ReportProblem> {
               },
               child: const Text(
                 "Aceptar",
-                style: TextStyle(color: Color(0xFF8fbc18)),
+                style: TextStyle(color: Color(0xFF323846)),
               ),
             ),
           ],
@@ -71,7 +77,7 @@ class _ReportProblemState extends State<ReportProblem> {
         title: const Text(
           "Reportar un Problema",
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF323846),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -89,18 +95,23 @@ class _ReportProblemState extends State<ReportProblem> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: const Color(0xFF8fbc18).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: const Color(0xFF8fbc18).withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue[700]),
+                    Icon(Icons.info_outline, color: const Color(0xFF8fbc18)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Ayúdanos a mejorar reportando errores o sugerencias",
-                        style: TextStyle(fontSize: 13, color: Colors.blue[900]),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color(0xFF8fbc18),
+                        ),
                       ),
                     ),
                   ],
@@ -112,7 +123,11 @@ class _ReportProblemState extends State<ReportProblem> {
               // CATEGORÍA
               const Text(
                 "Categoría",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF323846),
+                ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
@@ -128,21 +143,39 @@ class _ReportProblemState extends State<ReportProblem> {
                 items: const [
                   DropdownMenuItem(
                     value: 'Bug / Error',
-                    child: Text('Bug / Error'),
+                    child: Text(
+                      'Bug / Error',
+                      style: TextStyle(color: Color(0xFF323846)),
+                    ),
                   ),
                   DropdownMenuItem(
                     value: 'Sugerencia',
-                    child: Text('Sugerencia'),
+                    child: Text(
+                      'Sugerencia',
+                      style: TextStyle(color: Color(0xFF323846)),
+                    ),
                   ),
                   DropdownMenuItem(
                     value: 'Problema de Login',
-                    child: Text('Problema de Login'),
+                    child: Text(
+                      'Problema de Login',
+                      style: TextStyle(color: Color(0xFF323846)),
+                    ),
                   ),
                   DropdownMenuItem(
                     value: 'Detección Incorrecta',
-                    child: Text('Detección Incorrecta'),
+                    child: Text(
+                      'Detección Incorrecta',
+                      style: TextStyle(color: Color(0xFF323846)),
+                    ),
                   ),
-                  DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                  DropdownMenuItem(
+                    value: 'Otro',
+                    child: Text(
+                      'Otro',
+                      style: TextStyle(color: Color(0xFF323846)),
+                    ),
+                  ),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -156,7 +189,11 @@ class _ReportProblemState extends State<ReportProblem> {
               // ASUNTO
               const Text(
                 "Asunto",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF323846),
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -183,7 +220,11 @@ class _ReportProblemState extends State<ReportProblem> {
               // DESCRIPCIÓN
               const Text(
                 "Descripción",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF323846),
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -226,7 +267,7 @@ class _ReportProblemState extends State<ReportProblem> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Color(0xFFFaFaF5),
                     ),
                   ),
                 ),
