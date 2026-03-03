@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -16,6 +17,9 @@ class _CameraScreenState extends State<CameraScreen> {
   List<CameraDescription>? _cameras;
   bool _isInitialized = false;
   bool _isTakingPicture = false;
+  bool _flashOn = false;
+  bool _showBanner = false;
+  Timer? _bannerTimer;
 
   @override
   void initState() {
@@ -40,7 +44,6 @@ class _CameraScreenState extends State<CameraScreen> {
         return;
       }
 
-      // Usar la cámara trasera por defecto
       final camera = _cameras!.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.back,
         orElse: () => _cameras!.first,
@@ -58,6 +61,8 @@ class _CameraScreenState extends State<CameraScreen> {
         setState(() {
           _isInitialized = true;
         });
+
+        _showTemporaryBanner();
       }
     } catch (e) {
       if (mounted) {
@@ -69,6 +74,40 @@ class _CameraScreenState extends State<CameraScreen> {
         );
         Navigator.pop(context);
       }
+    }
+  }
+
+  void _showTemporaryBanner() {
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _showBanner = true;
+        });
+      }
+    });
+
+    _bannerTimer = Timer(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showBanner = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _toggleFlash() async {
+    if (_controller == null) return;
+
+    try {
+      setState(() {
+        _flashOn = !_flashOn;
+      });
+
+      await _controller!.setFlashMode(
+        _flashOn ? FlashMode.torch : FlashMode.off,
+      );
+    } catch (e) {
+      debugPrint('Error al cambiar flash: $e');
     }
   }
 
@@ -84,19 +123,19 @@ class _CameraScreenState extends State<CameraScreen> {
     });
 
     try {
-      // Tomar la foto
+      if (_flashOn) {
+        await _controller!.setFlashMode(FlashMode.off);
+      }
+
       final XFile image = await _controller!.takePicture();
 
-      // Obtener directorio temporal
       final Directory tempDir = await getTemporaryDirectory();
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String filePath = path.join(tempDir.path, 'IMG_$timestamp.jpg');
 
-      // Copiar la imagen al path temporal
       await File(image.path).copy(filePath);
 
       if (mounted) {
-        // Devolver el path de la imagen
         Navigator.pop(context, filePath);
       }
     } catch (e) {
@@ -117,6 +156,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void dispose() {
+    _bannerTimer?.cancel();
     _controller?.dispose();
     super.dispose();
   }
@@ -157,117 +197,156 @@ class _CameraScreenState extends State<CameraScreen> {
             child: Column(
               children: [
                 // HEADER
-                Padding(
+                Container(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // BOTÓN CERRAR
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      // TÍTULO
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                        child: const Text(
-                          "Escanear Hoja",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 24,
                           ),
                         ),
                       ),
-                      // ESPACIO VACÍO (para centrar el título)
-                      const SizedBox(width: 48),
+
+                      // BOTÓN FLASH
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _flashOn ? Color(0xFFFF5252) : Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: _toggleFlash,
+                          icon: Icon(
+                            _flashOn ? Icons.flash_on : Icons.flash_off,
+                            color: _flashOn ? Colors.white : Colors.black,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // BANNER DE INSTRUCCIONES CON ANIMACIÓN E IGNOREPOINTER
+                IgnorePointer(
+                  ignoring: !_showBanner,
+                  child: AnimatedSlide(
+                    duration: Duration(milliseconds: 400),
+                    curve: Curves.easeOut,
+                    offset: _showBanner ? Offset.zero : Offset(0, -1),
+                    child: AnimatedOpacity(
+                      duration: Duration(milliseconds: 400),
+                      opacity: _showBanner ? 1.0 : 0.0,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF8fbc18).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.eco,
+                                color: Color(0xFF8fbc18),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Alinea la hoja dentro del marco",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "DETECTANDO ENFERMEDADES",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey[600],
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 
                 const Spacer(),
 
-                // INSTRUCCIONES
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.eco, color: Color(0xFF8fbc18), size: 32),
-                      SizedBox(height: 8),
-                      Text(
-                        "Centra la hoja en el recuadro",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "Asegúrate de tener buena iluminación",
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
                 // BOTÓN DE CAPTURA
                 Container(
-                  margin: const EdgeInsets.only(bottom: 32),
+                  margin: const EdgeInsets.only(bottom: 40),
                   child: GestureDetector(
                     onTap: _isTakingPicture ? null : _takePicture,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Círculo exterior
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isTakingPicture
+                            ? Colors.grey
+                            : Color(0xFF4CAF50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
                           ),
-                        ),
-                        // Círculo interior
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _isTakingPicture
-                                ? Colors.grey
-                                : const Color(0xFF8fbc18),
-                          ),
-                          child: _isTakingPicture
-                              ? const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: _isTakingPicture
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 32,
+                            ),
                     ),
                   ),
                 ),
@@ -284,68 +363,78 @@ class _CameraScreenState extends State<CameraScreen> {
 class CameraOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
+    final darkPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.5)
+      ..style = PaintingStyle.fill;
 
-    // Calcular rectángulo centrado
-    final double rectWidth = size.width * 0.75;
-    final double rectHeight = size.height * 0.4;
+    final double rectWidth = size.width * 0.85;
+    final double rectHeight = size.height * 0.65;
     final double left = (size.width - rectWidth) / 2;
     final double top = (size.height - rectHeight) / 2;
 
     final rect = Rect.fromLTWH(left, top, rectWidth, rectHeight);
 
-    // Dibujar esquinas del rectángulo
-    final cornerLength = 30.0;
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(20)))
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(path, darkPaint);
+
+    final cornerPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    final cornerLength = 40.0;
 
     // Esquina superior izquierda
     canvas.drawLine(
+      Offset(rect.left, rect.top + 20),
       Offset(rect.left, rect.top),
-      Offset(rect.left + cornerLength, rect.top),
-      paint,
+      cornerPaint,
     );
     canvas.drawLine(
       Offset(rect.left, rect.top),
-      Offset(rect.left, rect.top + cornerLength),
-      paint,
+      Offset(rect.left + cornerLength, rect.top),
+      cornerPaint,
     );
 
     // Esquina superior derecha
     canvas.drawLine(
       Offset(rect.right, rect.top),
       Offset(rect.right - cornerLength, rect.top),
-      paint,
+      cornerPaint,
     );
     canvas.drawLine(
       Offset(rect.right, rect.top),
-      Offset(rect.right, rect.top + cornerLength),
-      paint,
+      Offset(rect.right, rect.top + 20),
+      cornerPaint,
     );
 
     // Esquina inferior izquierda
     canvas.drawLine(
+      Offset(rect.left, rect.bottom - 20),
       Offset(rect.left, rect.bottom),
-      Offset(rect.left + cornerLength, rect.bottom),
-      paint,
+      cornerPaint,
     );
     canvas.drawLine(
       Offset(rect.left, rect.bottom),
-      Offset(rect.left, rect.bottom - cornerLength),
-      paint,
+      Offset(rect.left + cornerLength, rect.bottom),
+      cornerPaint,
     );
 
     // Esquina inferior derecha
     canvas.drawLine(
-      Offset(rect.right, rect.bottom),
       Offset(rect.right - cornerLength, rect.bottom),
-      paint,
+      Offset(rect.right, rect.bottom),
+      cornerPaint,
     );
     canvas.drawLine(
+      Offset(rect.right, rect.bottom - 20),
       Offset(rect.right, rect.bottom),
-      Offset(rect.right, rect.bottom - cornerLength),
-      paint,
+      cornerPaint,
     );
   }
 
