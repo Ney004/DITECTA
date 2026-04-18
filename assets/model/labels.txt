@@ -1,0 +1,6 @@
+cordana_leve
+cordana_moderada
+grave
+leve
+moderada
+saludable
