@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/classification_service.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final String imagePath;
   final ClassificationResult result;
 
@@ -11,6 +11,44 @@ class ResultScreen extends StatelessWidget {
     required this.imagePath,
     required this.result,
   });
+
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Configurar animación de crecimiento inicial
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800), // 0.8 segundos
+      vsync: this,
+    );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack, // Efecto de "rebote" suave al final
+    );
+
+    // Iniciar animación automáticamente al cargar la pantalla
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   // Obtener severidad (saludable, leve, moderada, grave)
   String _getSeverity(String label) {
@@ -21,11 +59,36 @@ class ResultScreen extends StatelessWidget {
     return 'desconocido';
   }
 
-  // Obtener tipo de enfermedad (sigatoka o cordana)
-  String? _getDiseaseType(String label) {
-    if (label.contains('sigatoka')) return 'Sigatoka';
+  // Obtener tipo de enfermedad (Sigatoka Negra o Cordana)
+  String _getDiseaseType(String label) {
     if (label.contains('cordana')) return 'Cordana';
-    return null;
+    if (label.contains('sigatoka') ||
+        label.contains('grave') ||
+        label.contains('leve') ||
+        label.contains('moderada')) {
+      // Si NO es cordana pero es enfermo, es Sigatoka
+      if (!label.contains('cordana') && !label.contains('saludable')) {
+        return 'Sigatoka Negra';
+      }
+    }
+    if (label.contains('saludable')) return 'Hoja Saludable';
+    return 'Enfermedad Detectada';
+  }
+
+  // Obtener nombre a mostrar en el círculo (solo severidad)
+  String _getCircleDisplayName(String severity) {
+    switch (severity) {
+      case 'saludable':
+        return 'SALUDABLE';
+      case 'leve':
+        return 'LEVE';
+      case 'moderada':
+        return 'MODERADA';
+      case 'grave':
+        return 'GRAVE';
+      default:
+        return 'DESCONOCIDO';
+    }
   }
 
   // Obtener color según severidad
@@ -45,19 +108,19 @@ class ResultScreen extends StatelessWidget {
   }
 
   // Obtener descripción según tipo y severidad
-  String _getDescription(String? diseaseType, String severity) {
+  String _getDescription(String diseaseType, String severity) {
     if (severity == 'saludable') {
       return 'La planta muestra signos de buena salud. Continúa con los cuidados regulares y el monitoreo preventivo.';
     }
 
-    if (diseaseType == 'Sigatoka') {
+    if (diseaseType == 'Sigatoka Negra') {
       switch (severity) {
         case 'leve':
           return 'Manchas rojizo-amarronadas características observadas. El nivel de infección sugiere que se necesitan controles inmediatos para prevenir la propagación.';
         case 'moderada':
           return 'Manchas rojizo-amarronadas avanzadas. La infección ha progresado significativamente. Se requiere tratamiento fungicida inmediato.';
         case 'grave':
-          return 'Nivel crítico de Sigatoka. Las hojas muestran necrosis severa. Requiere tratamiento urgente y aislamiento de plantas afectadas.';
+          return 'Nivel crítico de Sigatoka Negra. Las hojas muestran necrosis severa. Requiere tratamiento urgente y aislamiento de plantas afectadas.';
       }
     }
 
@@ -77,17 +140,17 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPred = result.topPrediction;
+    final topPred = widget.result.topPrediction;
     final severity = _getSeverity(topPred.label);
     final diseaseType = _getDiseaseType(topPred.label);
     final color = _getColorForSeverity(severity);
     final confidence = topPred.confidence * 100;
 
-    // Título para mostrar
-    String displayTitle = severity.toUpperCase();
-    if (diseaseType != null) {
-      displayTitle = diseaseType;
-    }
+    // Título para el CÍRCULO - solo severidad
+    String circleTitle = _getCircleDisplayName(severity);
+
+    // Título para la TARJETA - tipo de enfermedad
+    String cardTitle = diseaseType;
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
@@ -99,9 +162,9 @@ class ResultScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Detection Result',
+          'Resultado de Escaneo',
           style: TextStyle(
-            color: Colors.black87,
+            color: Color(0XFF323846),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -113,7 +176,7 @@ class ResultScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 24),
 
-            // CÍRCULO DE PROGRESO CON ESTADO
+            // CÍRCULO DE PROGRESO CON ESTADO Y ANIMACIÓN
             Center(
               child: SizedBox(
                 width: 220,
@@ -121,10 +184,18 @@ class ResultScreen extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Círculo de fondo con gradiente
-                    CustomPaint(
-                      size: Size(220, 220),
-                      painter: SeverityCirclePainter(severity: severity),
+                    // Círculo animado
+                    AnimatedBuilder(
+                      animation: _scaleAnimation,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          size: Size(220, 220),
+                          painter: SeverityCirclePainter(
+                            severity: severity,
+                            animationValue: _scaleAnimation.value,
+                          ),
+                        );
+                      },
                     ),
 
                     // Contenido central
@@ -132,7 +203,7 @@ class ResultScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'STATUS',
+                          'ESTADO',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -141,7 +212,7 @@ class ResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          displayTitle,
+                          circleTitle,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -150,7 +221,7 @@ class ResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${confidence.toStringAsFixed(0)}% Confidence',
+                          '${confidence.toStringAsFixed(0)}% Confianza',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[700],
@@ -171,10 +242,10 @@ class ResultScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStateIndicator('HEALTHY', 'saludable', severity),
-                  _buildStateIndicator('MILD', 'leve', severity),
-                  _buildStateIndicator('MODERATE', 'moderada', severity),
-                  _buildStateIndicator('SEVERE', 'grave', severity),
+                  _buildStateIndicator('Saludable', 'saludable', severity),
+                  _buildStateIndicator('Leve', 'leve', severity),
+                  _buildStateIndicator('Moderada', 'moderada', severity),
+                  _buildStateIndicator('Grave', 'grave', severity),
                 ],
               ),
             ),
@@ -186,50 +257,40 @@ class ResultScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Color(0xFF5A7A7C),
+                color: Color(0xFFfafaf5),
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icono
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      diseaseType != null
-                          ? Icons.warning_amber
-                          : Icons.check_circle,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-
                   const SizedBox(width: 16),
-
                   // Texto
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          diseaseType ?? 'Hoja Saludable',
+                          cardTitle,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Color(0xFF8fbc18),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
+                          textAlign: TextAlign.start,
                           _getDescription(diseaseType, severity),
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Color(0xff323846),
                             height: 1.4,
                           ),
                         ),
@@ -239,28 +300,28 @@ class ResultScreen extends StatelessWidget {
                             Icon(
                               Icons.location_on,
                               size: 14,
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: Color(0xFF8fbc18).withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Sector 4, Main Farm',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Color(0xFF8fbc18).withValues(alpha: 0.7),
                               ),
                             ),
                             const SizedBox(width: 16),
                             Icon(
                               Icons.access_time,
                               size: 14,
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: Color(0xFF8fbc18).withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _getCurrentTime(),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Color(0xFF8fbc18).withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -284,10 +345,10 @@ class ResultScreen extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(Icons.refresh, size: 20),
-                      label: Text('Retake'),
+                      label: Text('Tomar de Nuevo'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Color(0xFF5A7A7C),
-                        side: BorderSide(color: Color(0xFF5A7A7C), width: 2),
+                        foregroundColor: Color(0xFF8fbc18),
+                        side: BorderSide(color: Color(0xFF8fbc18), width: 2),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -305,14 +366,14 @@ class ResultScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Resultado guardado'),
-                            backgroundColor: Color(0xFF4CAF50),
+                            backgroundColor: Color(0xFF8fbc18),
                           ),
                         );
                       },
                       icon: Icon(Icons.save, size: 20),
                       label: Text('Guardar'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF5A7A7C),
+                        backgroundColor: Color(0xFF8fbc18),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -322,33 +383,6 @@ class ResultScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ENLACE A EXPERT HELP
-            TextButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Conectando con experto...'),
-                    backgroundColor: Color(0xFF5A7A7C),
-                  ),
-                );
-              },
-              icon: Icon(
-                Icons.help_outline,
-                size: 18,
-                color: Color(0xFF5A7A7C),
-              ),
-              label: Text(
-                'Expert Help',
-                style: TextStyle(
-                  color: Color(0xFF5A7A7C),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
             ),
 
@@ -399,57 +433,102 @@ class ResultScreen extends StatelessWidget {
   }
 }
 
-// CUSTOM PAINTER PARA EL CÍRCULO DE SEVERIDAD
+// CUSTOM PAINTER PARA EL CÍRCULO DE SEVERIDAD CON ANIMACIÓN
 class SeverityCirclePainter extends CustomPainter {
   final String severity;
+  final double animationValue;
 
-  SeverityCirclePainter({required this.severity});
+  SeverityCirclePainter({required this.severity, required this.animationValue});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
 
-    // Colores del gradiente según severidad
-    final colors = _getGradientColors(severity);
+    // Definir los 4 colores
+    final colors = [
+      Color(0xFF4CAF50), // Verde - Saludable
+      Color(0xFFFFEB3B), // Amarillo - Leve
+      Color(0xFFFF9800), // Naranja - Moderado
+      Color(0xFFF44336), // Rojo - Grave
+    ];
 
-    // Pintar círculo de fondo gris claro
-    final bgPaint = Paint()
-      ..color = Colors.grey[200]!
+    final activeIndex = _getActiveIndex(severity);
+
+    // GROSOR BASE: Todos comienzan con el mismo grosor
+    final baseStrokeWidth = 18.0;
+    final targetActiveWidth = 26.0; // Grosor final del segmento activo
+
+    // Calcular grosor actual del segmento activo basado en animationValue
+    // animationValue va de 0.0 (inicio) a 1.0 (final)
+    final activeStrokeWidth =
+        baseStrokeWidth +
+        (targetActiveWidth - baseStrokeWidth) * animationValue;
+
+    // 1. DIBUJAR SEGMENTOS INACTIVOS (siempre mismo grosor)
+    final inactivePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 20;
+      ..strokeWidth = baseStrokeWidth
+      ..strokeCap = StrokeCap.butt;
 
-    canvas.drawCircle(center, radius, bgPaint);
+    for (int i = 0; i < 4; i++) {
+      if (i == activeIndex) continue;
 
-    // Pintar arco con gradiente
-    final rect = Rect.fromCircle(center: center, radius: radius);
+      inactivePaint.color = colors[i];
+      final rect = Rect.fromCircle(center: center, radius: radius);
 
-    final gradient = SweepGradient(
-      colors: colors,
-      startAngle: -math.pi / 2,
-      endAngle: 3 * math.pi / 2,
+      final startAngle = (-math.pi / 2) + (i * math.pi / 2);
+      final sweepAngle = math.pi / 2;
+
+      canvas.drawArc(rect, startAngle, sweepAngle, false, inactivePaint);
+    }
+
+    // 2. DIBUJAR SEGMENTO ACTIVO (crece con la animación)
+    // Radio ajustado para compensar el grosor extra
+    final radiusAdjustment = (activeStrokeWidth - baseStrokeWidth) / 2;
+    final activeRadius = radius + radiusAdjustment;
+
+    final angleOverlap = 0.04;
+
+    final activePaint = Paint()
+      ..color = colors[activeIndex]
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = activeStrokeWidth
+      ..strokeCap = StrokeCap.butt;
+
+    final activeRect = Rect.fromCircle(center: center, radius: activeRadius);
+
+    final activeStartAngle =
+        (-math.pi / 2) + (activeIndex * math.pi / 2) - angleOverlap;
+    final activeSweepAngle = (math.pi / 2) + (2 * angleOverlap);
+
+    canvas.drawArc(
+      activeRect,
+      activeStartAngle,
+      activeSweepAngle,
+      false,
+      activePaint,
     );
-
-    final paint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 20
-      ..strokeCap = StrokeCap.round;
-
-    // Dibujar arco completo
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, paint);
   }
 
-  List<Color> _getGradientColors(String severity) {
-    // Colores: Verde → Amarillo → Naranja → Rojo
-    return [
-      Color(0xFF4CAF50), // Verde (saludable)
-      Color(0xFFFFEB3B), // Amarillo (leve)
-      Color(0xFFFF9800), // Naranja (moderada)
-      Color(0xFFF44336), // Rojo (grave)
-    ];
+  int _getActiveIndex(String severity) {
+    switch (severity) {
+      case 'saludable':
+        return 0;
+      case 'leve':
+        return 1;
+      case 'moderada':
+        return 2;
+      case 'grave':
+        return 3;
+      default:
+        return 0;
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant SeverityCirclePainter oldDelegate) {
+    return oldDelegate.severity != severity ||
+        oldDelegate.animationValue != animationValue;
+  }
 }
