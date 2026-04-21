@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/classification_service.dart';
+import 'camera_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   final String imagePath;
@@ -37,7 +38,7 @@ class _ResultScreenState extends State<ResultScreen>
     );
 
     // Iniciar animación automáticamente al cargar la pantalla
-    Future.delayed(Duration(milliseconds: 300), () {
+    Future.delayed(Duration(milliseconds: 400), () {
       if (mounted) {
         _animationController.forward();
       }
@@ -174,7 +175,7 @@ class _ResultScreenState extends State<ResultScreen>
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // CÍRCULO DE PROGRESO CON ESTADO Y ANIMACIÓN
             Center(
@@ -234,7 +235,7 @@ class _ResultScreenState extends State<ResultScreen>
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // BARRA DE ESTADOS
             Padding(
@@ -250,7 +251,7 @@ class _ResultScreenState extends State<ResultScreen>
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // TARJETA DE INFORMACIÓN
             Container(
@@ -338,47 +339,164 @@ class _ResultScreenState extends State<ResultScreen>
             // BOTONES
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch, // Estira los botones a lo ancho
                 children: [
                   // Botón Retake
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.refresh, size: 20),
-                      label: Text('Tomar de Nuevo'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Color(0xFF8fbc18),
-                        side: BorderSide(color: Color(0xFF8fbc18), width: 2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      // El código que corregimos anteriormente con Navigator.push
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CameraScreen(),
                         ),
+                      ).then((imagePath) async {
+                        if (imagePath != null && context.mounted) {
+                          // Mostrar overlay de análisis
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return Container(
+                                color: Colors.black54,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF8fbc18),
+                                            ),
+                                        strokeWidth: 4,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              '🔬 Analizando imagen...',
+                                              style: TextStyle(
+                                                color: Color(0xFF323846),
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'Detectando enfermedades',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+
+                          try {
+                            // Analizar imagen
+                            final classifier = ClassificationService();
+                            final result = await classifier.classifyImage(
+                              imagePath,
+                            );
+
+                            if (context.mounted) {
+                              // Cerrar loading
+                              Navigator.pop(context);
+
+                              // Navegar a nueva pantalla de resultados
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ResultScreen(
+                                    imagePath: imagePath,
+                                    result: result,
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              // Cerrar loading
+                              Navigator.pop(context);
+
+                              // Mostrar error y volver al home
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error al analizar imagen: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+
+                              Navigator.popUntil(
+                                context,
+                                (route) => route.isFirst,
+                              );
+                            }
+                          }
+                        } else {
+                          // Si no se tomó foto, volver al home
+                          if (context.mounted) {
+                            Navigator.popUntil(
+                              context,
+                              (route) => route.isFirst,
+                            );
+                          }
+                        }
+                      });
+                    },
+                    icon: Icon(Icons.refresh, size: 20),
+                    label: Text('Tomar de Nuevo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Color(0xFF8fbc18),
+                      side: BorderSide(color: Color(0xFF8fbc18), width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 16),
+                  // Cambiamos el SizedBox a 'height' para separar de arriba hacia abajo
+                  const SizedBox(height: 16),
 
                   // Botón Guardar
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Resultado guardado'),
-                            backgroundColor: Color(0xFF8fbc18),
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.save, size: 20),
-                      label: Text('Guardar'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF8fbc18),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Resultado guardado'),
+                          backgroundColor: Color(0xFF8fbc18),
                         ),
+                      );
+                    },
+                    icon: Icon(Icons.save, size: 20),
+                    label: Text('Guardar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF8fbc18),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
