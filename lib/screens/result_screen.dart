@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/classification_service.dart';
 import 'camera_screen.dart';
+import '../services/database_service.dart';
+import '../models/scan_model.dart';
+import 'home.dart';
 
 class ResultScreen extends StatefulWidget {
   final String imagePath;
@@ -25,23 +28,16 @@ class _ResultScreenState extends State<ResultScreen>
   @override
   void initState() {
     super.initState();
-
-    // Configurar animación de crecimiento inicial
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800), // 0.8 segundos
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _scaleAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack, // Efecto de "rebote" suave al final
+      curve: Curves.easeOutBack,
     );
-
-    // Iniciar animación automáticamente al cargar la pantalla
-    Future.delayed(Duration(milliseconds: 400), () {
-      if (mounted) {
-        _animationController.forward();
-      }
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _animationController.forward();
     });
   }
 
@@ -51,7 +47,8 @@ class _ResultScreenState extends State<ResultScreen>
     super.dispose();
   }
 
-  // Obtener severidad (saludable, leve, moderada, grave)
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   String _getSeverity(String label) {
     if (label.contains('saludable')) return 'saludable';
     if (label.contains('leve')) return 'leve';
@@ -60,23 +57,20 @@ class _ResultScreenState extends State<ResultScreen>
     return 'desconocido';
   }
 
-  // Obtener tipo de enfermedad (Sigatoka Negra o Cordana)
   String _getDiseaseType(String label) {
     if (label.contains('cordana')) return 'Cordana';
-    if (label.contains('sigatoka') ||
-        label.contains('grave') ||
-        label.contains('leve') ||
-        label.contains('moderada')) {
-      // Si NO es cordana pero es enfermo, es Sigatoka
-      if (!label.contains('cordana') && !label.contains('saludable')) {
-        return 'Sigatoka Negra';
-      }
+    if (!label.contains('cordana') &&
+        !label.contains('saludable') &&
+        (label.contains('sigatoka') ||
+            label.contains('grave') ||
+            label.contains('leve') ||
+            label.contains('moderada'))) {
+      return 'Sigatoka Negra';
     }
     if (label.contains('saludable')) return 'Hoja Saludable';
     return 'Enfermedad Detectada';
   }
 
-  // Obtener nombre a mostrar en el círculo (solo severidad)
   String _getCircleDisplayName(String severity) {
     switch (severity) {
       case 'saludable':
@@ -92,28 +86,25 @@ class _ResultScreenState extends State<ResultScreen>
     }
   }
 
-  // Obtener color según severidad
   Color _getColorForSeverity(String severity) {
     switch (severity) {
       case 'saludable':
-        return Color(0xFF4CAF50); // Verde
+        return const Color(0xFF4CAF50);
       case 'leve':
-        return Color(0xFFFFEB3B); // Amarillo
+        return const Color(0xFFFFEB3B);
       case 'moderada':
-        return Color(0xFFFF9800); // Naranja
+        return const Color(0xFFFF9800);
       case 'grave':
-        return Color(0xFFF44336); // Rojo
+        return const Color(0xFFF44336);
       default:
         return Colors.grey;
     }
   }
 
-  // Obtener descripción según tipo y severidad
   String _getDescription(String diseaseType, String severity) {
     if (severity == 'saludable') {
       return 'La planta muestra signos de buena salud. Continúa con los cuidados regulares y el monitoreo preventivo.';
     }
-
     if (diseaseType == 'Sigatoka Negra') {
       switch (severity) {
         case 'leve':
@@ -124,7 +115,6 @@ class _ResultScreenState extends State<ResultScreen>
           return 'Nivel crítico de Sigatoka Negra. Las hojas muestran necrosis severa. Requiere tratamiento urgente y aislamiento de plantas afectadas.';
       }
     }
-
     if (diseaseType == 'Cordana') {
       switch (severity) {
         case 'leve':
@@ -135,9 +125,220 @@ class _ResultScreenState extends State<ResultScreen>
           return 'Infección grave de Cordana. Tratamiento urgente requerido. Considerar eliminación de tejido muy afectado.';
       }
     }
-
     return 'Enfermedad detectada. Se recomienda consultar con un especialista.';
   }
+
+  String _getCurrentTime() {
+    final now = DateTime.now();
+    final hour = now.hour > 12 ? now.hour - 12 : now.hour;
+    final period = now.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:${now.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  // ── Guardar en base de datos ────────────────────────────────────────────────
+
+  Future<void> _saveScanToDatabase({
+    required String customName,
+    required String customSector,
+  }) async {
+    final topPred = widget.result.topPrediction;
+    final severity = _getSeverity(topPred.label);
+    final disease = _getDiseaseType(topPred.label);
+    final now = DateTime.now();
+
+    final scan = ScanModel(
+      title: customName,
+      date: '${now.day}/${now.month}/${now.year} • ${_getCurrentTime()}',
+      timeAgo: 'Ahora',
+      severity: severity[0].toUpperCase() + severity.substring(1),
+      diseaseType: disease,
+      imagePath: widget.imagePath,
+      confidence: topPred.confidence * 100,
+      sector: customSector,
+      scannedAt: now,
+    );
+
+    await DatabaseService().saveScan(scan);
+  }
+
+  // ── Diálogo de guardado ─────────────────────────────────────────────────────
+
+  Future<void> _showSaveDialog() async {
+    final nameController = TextEditingController();
+    final sectorController = TextEditingController();
+
+    // Capturar referencias ANTES de cualquier await
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                'Guardar escaneo',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF323846),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Opcional: agrega un nombre y la ubicación de la planta',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+
+              // Campo nombre
+              TextFormField(
+                controller: nameController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: 'Nombre / Etiqueta',
+                  hintText: 'Ej: Planta norte, Mata 12... (opcional)',
+                  prefixIcon: const Icon(
+                    Icons.label_outline,
+                    color: Color(0xFF8fbc18),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF8fbc18),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Campo sector / lote
+              TextFormField(
+                controller: sectorController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: 'Sector / Lote',
+                  hintText: 'Ej: Lote 3, Sector norte... (opcional)',
+                  prefixIcon: const Icon(
+                    Icons.location_on_outlined,
+                    color: Color(0xFF8fbc18),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF8fbc18),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Botones
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                        side: BorderSide(color: Colors.grey[300]!),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8fbc18),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Guardar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      // Número correlativo basado en escaneos existentes
+      final scanNumber = DatabaseService().getAllScans().length + 1;
+
+      final name = nameController.text.trim().isNotEmpty
+          ? nameController.text.trim()
+          : 'Scaneo #$scanNumber';
+
+      final sector = sectorController.text.trim();
+
+      await _saveScanToDatabase(customName: name, customSector: sector);
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Resultado guardado'),
+          backgroundColor: Color(0xFF8fbc18),
+        ),
+      );
+
+      // Redirigir al home limpiando el stack
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const Home()),
+        (route) => false,
+      );
+    }
+  }
+
+  // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -146,26 +347,21 @@ class _ResultScreenState extends State<ResultScreen>
     final diseaseType = _getDiseaseType(topPred.label);
     final color = _getColorForSeverity(severity);
     final confidence = topPred.confidence * 100;
-
-    // Título para el CÍRCULO - solo severidad
-    String circleTitle = _getCircleDisplayName(severity);
-
-    // Título para la TARJETA - tipo de enfermedad
-    String cardTitle = diseaseType;
+    final circleTitle = _getCircleDisplayName(severity);
 
     return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Resultado de Escaneo',
           style: TextStyle(
-            color: Color(0XFF323846),
+            color: Color(0xFF323846),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -177,7 +373,7 @@ class _ResultScreenState extends State<ResultScreen>
           children: [
             const SizedBox(height: 16),
 
-            // CÍRCULO DE PROGRESO CON ESTADO Y ANIMACIÓN
+            // ── CÍRCULO DE SEVERIDAD ──────────────────────────────────
             Center(
               child: SizedBox(
                 width: 220,
@@ -185,21 +381,16 @@ class _ResultScreenState extends State<ResultScreen>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Círculo animado
                     AnimatedBuilder(
                       animation: _scaleAnimation,
-                      builder: (context, child) {
-                        return CustomPaint(
-                          size: Size(220, 220),
-                          painter: SeverityCirclePainter(
-                            severity: severity,
-                            animationValue: _scaleAnimation.value,
-                          ),
-                        );
-                      },
+                      builder: (context, child) => CustomPaint(
+                        size: const Size(220, 220),
+                        painter: SeverityCirclePainter(
+                          severity: severity,
+                          animationValue: _scaleAnimation.value,
+                        ),
+                      ),
                     ),
-
-                    // Contenido central
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -237,7 +428,7 @@ class _ResultScreenState extends State<ResultScreen>
 
             const SizedBox(height: 16),
 
-            // BARRA DE ESTADOS
+            // ── BARRA DE ESTADOS ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Row(
@@ -253,12 +444,12 @@ class _ResultScreenState extends State<ResultScreen>
 
             const SizedBox(height: 16),
 
-            // TARJETA DE INFORMACIÓN
+            // ── TARJETA DE INFORMACIÓN ────────────────────────────────
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Color(0xFFfafaf5),
+                color: const Color(0xFFfafaf5),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -268,67 +459,44 @@ class _ResultScreenState extends State<ResultScreen>
                   ),
                 ],
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(width: 16),
-                  // Texto
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          cardTitle,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF8fbc18),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          textAlign: TextAlign.start,
-                          _getDescription(diseaseType, severity),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xff323846),
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Color(0xFF8fbc18).withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Sector 4, Main Farm',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF8fbc18).withValues(alpha: 0.7),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(
-                              Icons.access_time,
-                              size: 14,
-                              color: Color(0xFF8fbc18).withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _getCurrentTime(),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF8fbc18).withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  Text(
+                    diseaseType,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8fbc18),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _getDescription(diseaseType, severity),
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF323846),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: const Color(0xFF8fbc18).withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getCurrentTime(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: const Color(0xFF8fbc18).withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -336,98 +504,84 @@ class _ResultScreenState extends State<ResultScreen>
 
             const SizedBox(height: 32),
 
-            // BOTONES
+            // ── BOTONES ───────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch, // Estira los botones a lo ancho
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Botón Retake
+                  // Botón Tomar de Nuevo
                   OutlinedButton.icon(
                     onPressed: () async {
-                      // El código que corregimos anteriormente con Navigator.push
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const CameraScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const CameraScreen()),
                       ).then((imagePath) async {
                         if (imagePath != null && context.mounted) {
-                          // Mostrar overlay de análisis
                           showDialog(
                             context: context,
                             barrierDismissible: false,
-                            builder: (BuildContext context) {
-                              return Container(
-                                color: Colors.black54,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF8fbc18),
-                                            ),
-                                        strokeWidth: 4,
+                            builder: (_) => Container(
+                              color: Colors.black54,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Color(0xFF8fbc18),
                                       ),
-                                      const SizedBox(height: 20),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 12,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                      strokeWidth: 4,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          const Text(
+                                            '🔬 Analizando imagen...',
+                                            style: TextStyle(
+                                              color: Color(0xFF323846),
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              '🔬 Analizando imagen...',
-                                              style: TextStyle(
-                                                color: Color(0xFF323846),
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Detectando enfermedades',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 14,
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Detectando enfermedades',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
+                              ),
+                            ),
                           );
 
                           try {
-                            // Analizar imagen
                             final classifier = ClassificationService();
                             final result = await classifier.classifyImage(
                               imagePath,
                             );
 
                             if (context.mounted) {
-                              // Cerrar loading
                               Navigator.pop(context);
-
-                              // Navegar a nueva pantalla de resultados
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ResultScreen(
+                                  builder: (_) => ResultScreen(
                                     imagePath: imagePath,
                                     result: result,
                                   ),
@@ -436,17 +590,13 @@ class _ResultScreenState extends State<ResultScreen>
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              // Cerrar loading
                               Navigator.pop(context);
-
-                              // Mostrar error y volver al home
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Error al analizar imagen: $e'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
-
                               Navigator.popUntil(
                                 context,
                                 (route) => route.isFirst,
@@ -454,7 +604,6 @@ class _ResultScreenState extends State<ResultScreen>
                             }
                           }
                         } else {
-                          // Si no se tomó foto, volver al home
                           if (context.mounted) {
                             Navigator.popUntil(
                               context,
@@ -464,11 +613,14 @@ class _ResultScreenState extends State<ResultScreen>
                         }
                       });
                     },
-                    icon: Icon(Icons.refresh, size: 20),
-                    label: Text('Tomar de Nuevo'),
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: const Text('Tomar de Nuevo'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Color(0xFF8fbc18),
-                      side: BorderSide(color: Color(0xFF8fbc18), width: 2),
+                      foregroundColor: const Color(0xFF8fbc18),
+                      side: const BorderSide(
+                        color: Color(0xFF8fbc18),
+                        width: 2,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -476,23 +628,15 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
                   ),
 
-                  // Cambiamos el SizedBox a 'height' para separar de arriba hacia abajo
                   const SizedBox(height: 16),
 
                   // Botón Guardar
                   ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Resultado guardado'),
-                          backgroundColor: Color(0xFF8fbc18),
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.save, size: 20),
-                    label: Text('Guardar'),
+                    onPressed: _showSaveDialog,
+                    icon: const Icon(Icons.save, size: 20),
+                    label: const Text('Guardar'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF8fbc18),
+                      backgroundColor: const Color(0xFF8fbc18),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -511,7 +655,6 @@ class _ResultScreenState extends State<ResultScreen>
     );
   }
 
-  // Widget para indicadores de estado
   Widget _buildStateIndicator(String label, String state, String currentState) {
     final isActive = state == currentState;
     final color = _getColorForSeverity(state);
@@ -542,16 +685,10 @@ class _ResultScreenState extends State<ResultScreen>
       ],
     );
   }
-
-  String _getCurrentTime() {
-    final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : now.hour;
-    final period = now.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:${now.minute.toString().padLeft(2, '0')} $period';
-  }
 }
 
-// CUSTOM PAINTER PARA EL CÍRCULO DE SEVERIDAD CON ANIMACIÓN
+// ── CUSTOM PAINTER ──────────────────────────────────────────────────────────
+
 class SeverityCirclePainter extends CustomPainter {
   final String severity;
   final double animationValue;
@@ -563,27 +700,20 @@ class SeverityCirclePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
 
-    // Definir los 4 colores
     final colors = [
-      Color(0xFF4CAF50), // Verde - Saludable
-      Color(0xFFFFEB3B), // Amarillo - Leve
-      Color(0xFFFF9800), // Naranja - Moderado
-      Color(0xFFF44336), // Rojo - Grave
+      const Color(0xFF4CAF50),
+      const Color(0xFFFFEB3B),
+      const Color(0xFFFF9800),
+      const Color(0xFFF44336),
     ];
 
     final activeIndex = _getActiveIndex(severity);
-
-    // GROSOR BASE: Todos comienzan con el mismo grosor
-    final baseStrokeWidth = 18.0;
-    final targetActiveWidth = 26.0; // Grosor final del segmento activo
-
-    // Calcular grosor actual del segmento activo basado en animationValue
-    // animationValue va de 0.0 (inicio) a 1.0 (final)
+    const baseStrokeWidth = 18.0;
+    const targetActiveWidth = 26.0;
     final activeStrokeWidth =
         baseStrokeWidth +
         (targetActiveWidth - baseStrokeWidth) * animationValue;
 
-    // 1. DIBUJAR SEGMENTOS INACTIVOS (siempre mismo grosor)
     final inactivePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = baseStrokeWidth
@@ -591,41 +721,29 @@ class SeverityCirclePainter extends CustomPainter {
 
     for (int i = 0; i < 4; i++) {
       if (i == activeIndex) continue;
-
       inactivePaint.color = colors[i];
-      final rect = Rect.fromCircle(center: center, radius: radius);
-
-      final startAngle = (-math.pi / 2) + (i * math.pi / 2);
-      final sweepAngle = math.pi / 2;
-
-      canvas.drawArc(rect, startAngle, sweepAngle, false, inactivePaint);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        (-math.pi / 2) + (i * math.pi / 2),
+        math.pi / 2,
+        false,
+        inactivePaint,
+      );
     }
 
-    // 2. DIBUJAR SEGMENTO ACTIVO (crece con la animación)
-    // Radio ajustado para compensar el grosor extra
     final radiusAdjustment = (activeStrokeWidth - baseStrokeWidth) / 2;
-    final activeRadius = radius + radiusAdjustment;
-
-    final angleOverlap = 0.04;
-
-    final activePaint = Paint()
-      ..color = colors[activeIndex]
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = activeStrokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    final activeRect = Rect.fromCircle(center: center, radius: activeRadius);
-
-    final activeStartAngle =
-        (-math.pi / 2) + (activeIndex * math.pi / 2) - angleOverlap;
-    final activeSweepAngle = (math.pi / 2) + (2 * angleOverlap);
+    const angleOverlap = 0.04;
 
     canvas.drawArc(
-      activeRect,
-      activeStartAngle,
-      activeSweepAngle,
+      Rect.fromCircle(center: center, radius: radius + radiusAdjustment),
+      (-math.pi / 2) + (activeIndex * math.pi / 2) - angleOverlap,
+      (math.pi / 2) + (2 * angleOverlap),
       false,
-      activePaint,
+      Paint()
+        ..color = colors[activeIndex]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = activeStrokeWidth
+        ..strokeCap = StrokeCap.butt,
     );
   }
 
@@ -645,8 +763,7 @@ class SeverityCirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant SeverityCirclePainter oldDelegate) {
-    return oldDelegate.severity != severity ||
-        oldDelegate.animationValue != animationValue;
-  }
+  bool shouldRepaint(covariant SeverityCirclePainter oldDelegate) =>
+      oldDelegate.severity != severity ||
+      oldDelegate.animationValue != animationValue;
 }

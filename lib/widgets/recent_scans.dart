@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/scan_model.dart';
+import 'dart:io';
 
 class RecentScans extends StatelessWidget {
   final List<ScanModel> scans;
@@ -85,7 +86,13 @@ class _ScanCard extends StatelessWidget {
               height: 50,
               color: Colors.grey[200],
               child: scan.imagePath.isNotEmpty
-                  ? Image.asset(scan.imagePath, fit: BoxFit.cover)
+                  ? Image.file(
+                      // ← Image.file en lugar de Image.asset
+                      File(scan.imagePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Icon(Icons.eco, color: Colors.green[700], size: 28),
+                    )
                   : Icon(Icons.eco, color: Colors.green[700], size: 28),
             ),
           ),

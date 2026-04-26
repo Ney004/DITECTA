@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import '../services/gallery_service.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -118,14 +119,10 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
-    setState(() {
-      _isTakingPicture = true;
-    });
+    setState(() => _isTakingPicture = true);
 
     try {
-      if (_flashOn) {
-        await _controller!.setFlashMode(FlashMode.off);
-      }
+      if (_flashOn) await _controller!.setFlashMode(FlashMode.off);
 
       final XFile image = await _controller!.takePicture();
 
@@ -135,15 +132,25 @@ class _CameraScreenState extends State<CameraScreen> {
 
       await File(image.path).copy(filePath);
 
+      // Guardar en galería
+      final saved = await GalleryService.saveToGallery(filePath);
+
       if (mounted) {
+        if (!saved) {
+          // Avisa si no se pudo guardar pero deja continuar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudo guardar en galería'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
         Navigator.pop(context, filePath);
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isTakingPicture = false;
-        });
-
+        setState(() => _isTakingPicture = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al tomar foto: $e'),

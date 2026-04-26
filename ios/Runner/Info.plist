@@ -27,6 +27,10 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIApplicationSceneManifest</key>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>DITECTA necesita guardar las fotos del escaneo en tu galería</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>DITECTA necesita acceso a tu galería para guardar las fotos</string>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>
 			<false/>

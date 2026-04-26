@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReportProblem extends StatefulWidget {
   const ReportProblem({super.key});
@@ -12,6 +13,9 @@ class _ReportProblemState extends State<ReportProblem> {
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Bug / Error';
+  bool _isSending = false;
+
+  final _supabase = Supabase.instance.client;
 
   @override
   void dispose() {
@@ -20,47 +24,75 @@ class _ReportProblemState extends State<ReportProblem> {
     super.dispose();
   }
 
-  void _submitReport() {
-    if (_formKey.currentState!.validate()) {
-      // Aquí implementarías el envío del reporte (email, API, etc.)
+  Future<void> _submitReport() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    setState(() => _isSending = true);
+
+    try {
+      await _supabase.from('reports').insert({
+        'user_id': _supabase.auth.currentUser?.id, // null si no hay sesión
+        'category': _selectedCategory,
+        'subject': _subjectController.text.trim(),
+        'description': _descriptionController.text.trim(),
+      });
+
+      if (mounted) {
+        setState(() => _isSending = false);
+        _showSuccessDialog();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSending = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar reporte: $e'),
+            backgroundColor: Colors.red,
           ),
-          title: const Row(
-            children: [
-              SizedBox(width: 12),
-              Text(
-                "Reporte Enviado",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF323846),
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            "Gracias por tu reporte. Nuestro equipo lo revisará pronto.",
-            style: TextStyle(fontSize: 14, color: Color(0xFF323846)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Cerrar diálogo
-                Navigator.pop(context); // Volver a perfil
-              },
-              child: const Text(
-                "Aceptar",
-                style: TextStyle(color: Color(0xFF323846)),
+        );
+      }
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Color(0xFF8fbc18)),
+            SizedBox(width: 12),
+            Text(
+              "Reporte Enviado",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF323846),
               ),
             ),
           ],
         ),
-      );
-    }
+        content: const Text(
+          "Gracias por tu reporte. Nuestro equipo lo revisará pronto.",
+          style: TextStyle(fontSize: 14, color: Color(0xFF323846)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // cerrar diálogo
+              Navigator.pop(context); // volver a perfil
+            },
+            child: const Text(
+              "Aceptar",
+              style: TextStyle(
+                color: Color(0xFF8fbc18),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -91,7 +123,7 @@ class _ReportProblemState extends State<ReportProblem> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // INFORMACIÓN
+              // Banner info
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -101,16 +133,16 @@ class _ReportProblemState extends State<ReportProblem> {
                     color: const Color(0xFF8fbc18).withValues(alpha: 0.3),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    Icon(Icons.info_outline, color: const Color(0xFF8fbc18)),
-                    const SizedBox(width: 12),
+                    Icon(Icons.info_outline, color: Color(0xFF8fbc18)),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Ayúdanos a mejorar reportando errores o sugerencias",
                         style: TextStyle(
                           fontSize: 13,
-                          color: const Color(0xFF8fbc18),
+                          color: Color(0xFF8fbc18),
                         ),
                       ),
                     ),
@@ -120,7 +152,7 @@ class _ReportProblemState extends State<ReportProblem> {
 
               const SizedBox(height: 24),
 
-              // CATEGORÍA
+              // Categoría
               const Text(
                 "Categoría",
                 style: TextStyle(
@@ -143,50 +175,28 @@ class _ReportProblemState extends State<ReportProblem> {
                 items: const [
                   DropdownMenuItem(
                     value: 'Bug / Error',
-                    child: Text(
-                      'Bug / Error',
-                      style: TextStyle(color: Color(0xFF323846)),
-                    ),
+                    child: Text('Bug / Error'),
                   ),
                   DropdownMenuItem(
                     value: 'Sugerencia',
-                    child: Text(
-                      'Sugerencia',
-                      style: TextStyle(color: Color(0xFF323846)),
-                    ),
+                    child: Text('Sugerencia'),
                   ),
                   DropdownMenuItem(
                     value: 'Problema de Login',
-                    child: Text(
-                      'Problema de Login',
-                      style: TextStyle(color: Color(0xFF323846)),
-                    ),
+                    child: Text('Problema de Login'),
                   ),
                   DropdownMenuItem(
                     value: 'Detección Incorrecta',
-                    child: Text(
-                      'Detección Incorrecta',
-                      style: TextStyle(color: Color(0xFF323846)),
-                    ),
+                    child: Text('Detección Incorrecta'),
                   ),
-                  DropdownMenuItem(
-                    value: 'Otro',
-                    child: Text(
-                      'Otro',
-                      style: TextStyle(color: Color(0xFF323846)),
-                    ),
-                  ),
+                  DropdownMenuItem(value: 'Otro', child: Text('Otro')),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value!;
-                  });
-                },
+                onChanged: (v) => setState(() => _selectedCategory = v!),
               ),
 
               const SizedBox(height: 24),
 
-              // ASUNTO
+              // Asunto
               const Text(
                 "Asunto",
                 style: TextStyle(
@@ -206,18 +216,22 @@ class _ReportProblemState extends State<ReportProblem> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF8fbc18),
+                      width: 2,
+                    ),
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa un asunto';
-                  }
-                  return null;
-                },
+                validator: (v) => (v == null || v.isEmpty)
+                    ? 'Por favor ingresa un asunto'
+                    : null,
               ),
 
               const SizedBox(height: 24),
 
-              // DESCRIPCIÓN
+              // Descripción
               const Text(
                 "Descripción",
                 style: TextStyle(
@@ -239,35 +253,52 @@ class _ReportProblemState extends State<ReportProblem> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF8fbc18),
+                      width: 2,
+                    ),
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor describe el problema';
-                  }
-                  return null;
-                },
+                validator: (v) => (v == null || v.isEmpty)
+                    ? 'Por favor describe el problema'
+                    : null,
               ),
 
               const SizedBox(height: 32),
 
-              // BOTÓN ENVIAR
+              // Botón enviar
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submitReport,
+                child: ElevatedButton.icon(
+                  onPressed: _isSending ? null : _submitReport,
+                  icon: _isSending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.send, color: Colors.white),
+                  label: Text(
+                    _isSending ? 'Enviando...' : 'Enviar Reporte',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8fbc18),
+                    disabledBackgroundColor: const Color(
+                      0xFF8fbc18,
+                    ).withValues(alpha: 0.6),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Enviar Reporte",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFaFaF5),
                     ),
                   ),
                 ),

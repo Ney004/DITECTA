@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/scan_model.dart';
-import '../data/scan_data.dart';
+import '../services/database_service.dart';
 import 'profile.dart';
 import 'home.dart';
+import 'dart:io';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -19,33 +20,30 @@ class _HistoryState extends State<History> {
     switch (filter) {
       case 'Saludable':
         return Colors.green;
-      case 'Medio':
+      case 'Leve':
         return Colors.amber;
       case 'Moderada':
         return Colors.orange;
       case 'Grave':
         return Colors.red;
       default:
-        return Colors.grey;
+        return const Color(0xFF8fbc26);
     }
   }
 
-  // Método para filtrar los escaneos
-  List<ScanModel> _getFilteredScans() {
-    List<ScanModel> scans = ScanData.getAllScans();
-
-    // Filtrar por búsqueda
+  List<ScanModel> _applyFilters(List<ScanModel> scans) {
     if (searchQuery.isNotEmpty) {
-      scans = scans.where((scan) {
-        return scan.title.toLowerCase().contains(searchQuery.toLowerCase());
-      }).toList();
+      scans = scans
+          .where(
+            (s) =>
+                s.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                s.diseaseType.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
+          .toList();
     }
 
-    // Filtrar por severidad
     if (selectedFilter != 'Todos') {
-      scans = scans.where((scan) {
-        return scan.severity == selectedFilter;
-      }).toList();
+      scans = scans.where((s) => s.severity == selectedFilter).toList();
     }
 
     return scans;
@@ -53,8 +51,6 @@ class _HistoryState extends State<History> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredScans = _getFilteredScans();
-
     return Scaffold(
       backgroundColor: const Color(0xFFfafaf5),
       appBar: AppBar(
@@ -62,15 +58,13 @@ class _HistoryState extends State<History> {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Home()),
-            );
-          },
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const Home()),
+          ),
         ),
         title: const Text(
-          "Historial de Escaneos",
+          'Historial de Escaneos',
           style: TextStyle(
             color: Color(0xFF323846),
             fontSize: 18,
@@ -81,28 +75,20 @@ class _HistoryState extends State<History> {
       ),
       body: Column(
         children: [
-          // SEARCH BAR
+          // ── SEARCH BAR ────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
+              onChanged: (v) => setState(() => searchQuery = v),
               decoration: InputDecoration(
-                hintText: "Buscar por nombre",
+                hintText: 'Buscar por nombre o enfermedad',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Color(0xff8fbc26)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF8fbc26)),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          setState(() {
-                            searchQuery = '';
-                          });
-                        },
+                        onPressed: () => setState(() => searchQuery = ''),
                       )
                     : null,
                 filled: true,
@@ -116,57 +102,57 @@ class _HistoryState extends State<History> {
             ),
           ),
 
-          // FILTERS
+          // ── FILTROS ───────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: [
-                  _FilterChip(
-                    label: "Todos",
-                    isSelected: selectedFilter == 'Todos',
-                    selectedColor: _getFilterColor('Todos'),
-                    onTap: () => setState(() => selectedFilter = 'Todos'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    label: "Saludable",
-                    isSelected: selectedFilter == 'Saludable',
-                    selectedColor: _getFilterColor('Saludable'),
-                    onTap: () => setState(() => selectedFilter = 'Saludable'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    label: "Medio",
-                    isSelected: selectedFilter == 'Medio',
-                    selectedColor: _getFilterColor('Medio'),
-                    onTap: () => setState(() => selectedFilter = 'Medio'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    label: "Moderada",
-                    isSelected: selectedFilter == 'Moderada',
-                    selectedColor: _getFilterColor('Moderada'),
-                    onTap: () => setState(() => selectedFilter = 'Moderada'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    label: "Grave",
-                    isSelected: selectedFilter == 'Grave',
-                    selectedColor: _getFilterColor('Grave'),
-                    onTap: () => setState(() => selectedFilter = 'Grave'),
-                  ),
-                ],
+                children: ['Todos', 'Saludable', 'Leve', 'Moderada', 'Grave']
+                    .map((filter) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _FilterChip(
+                          label: filter,
+                          isSelected: selectedFilter == filter,
+                          selectedColor: _getFilterColor(filter),
+                          onTap: () => setState(() => selectedFilter = filter),
+                        ),
+                      );
+                    })
+                    .toList(),
               ),
             ),
           ),
 
-          // HISTORY LIST
+          // ── LISTA REACTIVA DESDE ISAR ─────────────────────────────
           Expanded(
-            child: filteredScans.isEmpty
-                ? Center(
+            child: StreamBuilder<List<ScanModel>>(
+              stream: DatabaseService().watchAllScans(),
+              builder: (context, snapshot) {
+                // Cargando
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF8fbc26)),
+                  );
+                }
+
+                // Error
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error al cargar datos: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                final filtered = _applyFilters(snapshot.data ?? []);
+
+                // Lista vacía
+                if (filtered.isEmpty) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -177,7 +163,9 @@ class _HistoryState extends State<History> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "No se encontraron resultados",
+                          snapshot.data?.isEmpty ?? true
+                              ? 'No hay escaneos guardados aún'
+                              : 'No se encontraron resultados',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
@@ -186,7 +174,9 @@ class _HistoryState extends State<History> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Intenta con otra búsqueda",
+                          snapshot.data?.isEmpty ?? true
+                              ? 'Realiza tu primer escaneo'
+                              : 'Intenta con otra búsqueda o filtro',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[500],
@@ -194,20 +184,23 @@ class _HistoryState extends State<History> {
                         ),
                       ],
                     ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredScans.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (_, index) {
-                      return _HistoryCard(item: filteredScans[index]);
-                    },
-                  ),
+                  );
+                }
+
+                // Lista con datos
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) =>
+                      _HistoryCard(item: filtered[index]),
+                );
+              },
+            ),
           ),
         ],
       ),
 
-      // BARRA DE NAVEGACIÓN INFERIOR
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
@@ -218,29 +211,29 @@ class _HistoryState extends State<History> {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const Home()),
+              MaterialPageRoute(builder: (_) => const Home()),
             );
           } else if (index == 2) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const Profile()),
+              MaterialPageRoute(builder: (_) => const Profile()),
             );
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
-            label: "Historial",
+            label: 'Historial',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cuenta"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cuenta'),
         ],
       ),
     );
   }
 }
 
-// FILTER CHIP WIDGET
+// ── FILTER CHIP ───────────────────────────────────────────────────────
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -281,10 +274,8 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-// HISTORY CARD WIDGET
 class _HistoryCard extends StatelessWidget {
   final ScanModel item;
-
   const _HistoryCard({required this.item});
 
   @override
@@ -304,7 +295,7 @@ class _HistoryCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // IMAGEN
+          // ── IMAGEN ──────────────────────────────────────────────
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Container(
@@ -312,27 +303,35 @@ class _HistoryCard extends StatelessWidget {
               height: 60,
               color: Colors.grey[200],
               child: item.imagePath.isNotEmpty
-                  ? Image.asset(item.imagePath, fit: BoxFit.cover)
+                  ? Image.file(
+                      File(item.imagePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Icon(Icons.eco, color: Colors.green[700], size: 32),
+                    )
                   : Icon(Icons.eco, color: Colors.green[700], size: 32),
             ),
           ),
           const SizedBox(width: 12),
 
-          // TEXTO
+          // ── TEXTO ────────────────────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Nombre + badge severidad
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        item.title,
+                        item.title, // ← nombre personalizado
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                           color: Color(0xFF323846),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -356,7 +355,37 @@ class _HistoryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
+
+                // Tipo de enfermedad
+                Text(
+                  item.diseaseType,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8fbc18),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Sector / Lote
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 12,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.sector.isNotEmpty ? item.sector : 'Sin sector',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Fecha y confianza
                 Row(
                   children: [
                     Icon(
@@ -365,28 +394,24 @@ class _HistoryCard extends StatelessWidget {
                       color: Colors.grey[500],
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      item.date,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      "Ver Detalles",
-                      style: TextStyle(
-                        color: Colors.green[600],
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                    Expanded(
+                      child: Text(
+                        item.date,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 8),
                     Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: Colors.green[600],
+                      Icons.analytics_outlined,
+                      size: 12,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${item.confidence.toStringAsFixed(0)}%',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),

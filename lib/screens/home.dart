@@ -4,13 +4,14 @@ import 'package:image_picker/image_picker.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/scan_button.dart';
 import '../widgets/recent_scans.dart';
-import '../data/scan_data.dart';
 import '../services/auth_service.dart';
-import '../services/classification_service.dart'; // ← AGREGAR
+import '../services/classification_service.dart';
 import 'history.dart';
 import 'profile.dart';
 import 'camera_screen.dart';
-import 'result_screen.dart'; // ← AGREGAR
+import 'result_screen.dart';
+import '../services/database_service.dart';
+import '../models/scan_model.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -135,14 +136,24 @@ class _HomeState extends State<Home> {
                     ScanButton(onPressed: _optionsDialogBox),
                     const SizedBox(height: 8),
                     const SizedBox(height: 32),
-                    RecentScans(
-                      scans: ScanData.getRecentScans(),
-                      onViewAll: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const History(),
-                          ),
+                    StreamBuilder<List<ScanModel>>(
+                      stream: DatabaseService().watchAllScans(),
+                      builder: (context, snapshot) {
+                        // Toma solo los 3 más recientes del stream
+                        final recentScans = (snapshot.data ?? [])
+                            .take(3)
+                            .toList();
+
+                        return RecentScans(
+                          scans: recentScans,
+                          onViewAll: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const History(),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
