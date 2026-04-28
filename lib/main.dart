@@ -8,9 +8,9 @@ void main() async {
 
   // Inicializar Supabase
   await Supabase.initialize(
-    url: 'https://kiqhdwicqyeyfpiyezva.supabase.co', // ← pega tu URL aquí
+    url: 'https://kiqhdwicqyeyfpiyezva.supabase.co',
     anonKey:
-        'sb_publishable_t49ZHOqSovIM5VhqidzaYQ_2YHOSIdG', // ← pega tu anon key aquí
+        'sb_publishable_t49ZHOqSovIM5VhqidzaYQ_2YHOSIdG', 
   );
 
   // Inicializar Hive
