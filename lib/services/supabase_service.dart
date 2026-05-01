@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/scan_model.dart';
 
@@ -14,19 +15,29 @@ class SupabaseService {
 
   // ── Guardar escaneo ─────────────────────────────────────────────
   Future<void> saveScan(ScanModel scan) async {
-    if (_uid == null) return;
-    await _client.from('scans').insert({
-      'user_id': _uid,
-      'title': scan.title,
-      'date': scan.date,
-      'time_ago': scan.timeAgo,
-      'severity': scan.severity,
-      'disease_type': scan.diseaseType,
-      'image_path': scan.imagePath,
-      'confidence': scan.confidence,
-      'sector': scan.sector,
-      'scanned_at': scan.scannedAt.toIso8601String(),
-    });
+    if (_uid == null) {
+      debugPrint('❌ saveScan: usuario no logueado');
+      return;
+    }
+    try {
+      debugPrint('📤 Guardando escaneo en Supabase...');
+      await _client.from('scans').insert({
+        'user_id': _uid,
+        'title': scan.title,
+        'date': scan.date,
+        'time_ago': scan.timeAgo,
+        'severity': scan.severity,
+        'disease_type': scan.diseaseType,
+        'image_path': scan.imagePath,
+        'confidence': scan.confidence,
+        'sector': scan.sector,
+        'scanned_at': scan.scannedAt.toIso8601String(),
+      });
+      debugPrint('✅ Escaneo guardado correctamente');
+    } catch (e) {
+      debugPrint('❌ Error guardando escaneo: $e');
+      rethrow;
+    }
   }
 
   // ── Guardar lista (migración) ───────────────────────────────────
@@ -71,7 +82,7 @@ class SupabaseService {
             diseaseType: row['disease_type'],
             imagePath: row['image_path'],
             confidence: (row['confidence'] as num).toDouble(),
-            sector: row['sector'],
+            sector: row['sector'] ?? '',
             scannedAt: DateTime.parse(row['scanned_at']),
           ),
         )
@@ -98,7 +109,7 @@ class SupabaseService {
                   diseaseType: row['disease_type'],
                   imagePath: row['image_path'],
                   confidence: (row['confidence'] as num).toDouble(),
-                  sector: row['sector'],
+                  sector: row['sector'] ?? '',
                   scannedAt: DateTime.parse(row['scanned_at']),
                 ),
               )
@@ -132,5 +143,33 @@ class SupabaseService {
   Future<void> markAsMigrated() async {
     if (_uid == null) return;
     await _client.from('user_meta').upsert({'user_id': _uid, 'migrated': true});
+  }
+
+  // ── Guardar perfil de usuario ───────────────────────────────────
+  Future<void> saveUserProfile({
+    required String displayName,
+    required String email,
+    String? photoUrl,
+  }) async {
+    debugPrint('saveUserProfile llamado - uid: $_uid');
+    if (_uid == null) {
+      debugPrint('_uid es null, no se puede guardar');
+      return;
+    }
+    try {
+      debugPrint('Haciendo upsert en user_meta...');
+      final result = await _client.from('user_meta').upsert({
+        'user_id': _uid,
+        'display_name': displayName,
+        'email': email,
+        'photo_url': photoUrl,
+        'last_login': DateTime.now().toIso8601String(),
+        'migrated': true,
+      }).select(); // ← agrega .select() para ver la respuesta
+
+      debugPrint('Perfil guardado: $result');
+    } catch (e) {
+      debugPrint('Error guardando perfil: $e');
+    }
   }
 }

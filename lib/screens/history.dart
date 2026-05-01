@@ -3,6 +3,7 @@ import '../models/scan_model.dart';
 import '../services/database_service.dart';
 import 'profile.dart';
 import 'home.dart';
+import 'scan_detail_screen.dart';
 import 'dart:io';
 
 class History extends StatefulWidget {
@@ -41,11 +42,9 @@ class _HistoryState extends State<History> {
           )
           .toList();
     }
-
     if (selectedFilter != 'Todos') {
       scans = scans.where((s) => s.severity == selectedFilter).toList();
     }
-
     return scans;
   }
 
@@ -110,8 +109,8 @@ class _HistoryState extends State<History> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: ['Todos', 'Saludable', 'Leve', 'Moderada', 'Grave']
-                    .map((filter) {
-                      return Padding(
+                    .map(
+                      (filter) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: _FilterChip(
                           label: filter,
@@ -119,38 +118,76 @@ class _HistoryState extends State<History> {
                           selectedColor: _getFilterColor(filter),
                           onTap: () => setState(() => selectedFilter = filter),
                         ),
-                      );
-                    })
+                      ),
+                    )
                     .toList(),
               ),
             ),
           ),
 
-          // ── LISTA REACTIVA DESDE ISAR ─────────────────────────────
+          // ── LISTA REACTIVA ────────────────────────────────────────
           Expanded(
             child: StreamBuilder<List<ScanModel>>(
               stream: DatabaseService().watchAllScans(),
               builder: (context, snapshot) {
-                // Cargando
+                // ── Sin conexión → mostrar caché local ──────────────
+                if (snapshot.hasError) {
+                  final cached = DatabaseService().getAllScans();
+                  final filtered = _applyFilters(cached);
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.wifi_off,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Sin conexión a internet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No hay datos en caché disponibles',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (_, index) => _HistoryCard(
+                      item: filtered[index],
+                      onTap: () => _openDetail(context, filtered[index]),
+                    ),
+                  );
+                }
+
+                // ── Cargando ────────────────────────────────────────
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: Color(0xFF8fbc26)),
                   );
                 }
 
-                // Error
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Error al cargar datos: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
                 final filtered = _applyFilters(snapshot.data ?? []);
 
-                // Lista vacía
+                // ── Lista vacía ─────────────────────────────────────
                 if (filtered.isEmpty) {
                   return Center(
                     child: Column(
@@ -187,13 +224,15 @@ class _HistoryState extends State<History> {
                   );
                 }
 
-                // Lista con datos
+                // ── Lista con datos ─────────────────────────────────
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (_, index) =>
-                      _HistoryCard(item: filtered[index]),
+                  itemBuilder: (_, index) => _HistoryCard(
+                    item: filtered[index],
+                    onTap: () => _openDetail(context, filtered[index]),
+                  ),
                 );
               },
             ),
@@ -229,6 +268,13 @@ class _HistoryState extends State<History> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cuenta'),
         ],
       ),
+    );
+  }
+
+  void _openDetail(BuildContext context, ScanModel scan) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ScanDetailScreen(scan: scan)),
     );
   }
 }
@@ -274,151 +320,159 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+// ── HISTORY CARD ──────────────────────────────────────────────────────
 class _HistoryCard extends StatelessWidget {
   final ScanModel item;
-  const _HistoryCard({required this.item});
+  final VoidCallback onTap;
+
+  const _HistoryCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // ── IMAGEN ──────────────────────────────────────────────
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 60,
-              height: 60,
-              color: Colors.grey[200],
-              child: item.imagePath.isNotEmpty
-                  ? Image.file(
-                      File(item.imagePath),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          Icon(Icons.eco, color: Colors.green[700], size: 32),
-                    )
-                  : Icon(Icons.eco, color: Colors.green[700], size: 32),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 12),
+          ],
+        ),
+        child: Row(
+          children: [
+            // ── IMAGEN ────────────────────────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 60,
+                height: 60,
+                color: Colors.grey[200],
+                child: item.imagePath.isNotEmpty
+                    ? Image.file(
+                        File(item.imagePath),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            Icon(Icons.eco, color: Colors.green[700], size: 32),
+                      )
+                    : Icon(Icons.eco, color: Colors.green[700], size: 32),
+              ),
+            ),
+            const SizedBox(width: 12),
 
-          // ── TEXTO ────────────────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Nombre + badge severidad
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.title, // ← nombre personalizado
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Color(0xFF323846),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: item.severityColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        item.severity,
-                        style: TextStyle(
-                          color: item.severityColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
+            // ── TEXTO ──────────────────────────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFF323846),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-
-                // Tipo de enfermedad
-                Text(
-                  item.diseaseType,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF8fbc18),
-                    fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: item.severityColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.severity,
+                          style: TextStyle(
+                            color: item.severityColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
 
-                // Sector / Lote
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 12,
-                      color: Colors.grey[500],
+                  Text(
+                    item.diseaseType,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8fbc18),
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      item.sector.isNotEmpty ? item.sector : 'Sin sector',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
+                  ),
+                  const SizedBox(height: 4),
 
-                // Fecha y confianza
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 12,
-                      color: Colors.grey[500],
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        item.date,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 12,
+                        color: Colors.grey[500],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.analytics_outlined,
-                      size: 12,
-                      color: Colors.grey[500],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${item.confidence.toStringAsFixed(0)}%',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 4),
+                      Text(
+                        item.sector.isNotEmpty ? item.sector : 'Sin sector',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item.date,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.analytics_outlined,
+                        size: 12,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${item.confidence.toStringAsFixed(0)}%',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // ── FLECHA ────────────────────────────────────────────
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+          ],
+        ),
       ),
     );
   }

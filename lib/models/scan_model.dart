@@ -56,6 +56,7 @@ class ScanModel {
 
   factory ScanModel.fromMap(Map<dynamic, dynamic> map, int key) => ScanModel(
     id: key,
+    supabaseId: map['supabaseId'] ?? '', // ← agrega esto
     title: map['title'] ?? '',
     date: map['date'] ?? '',
     timeAgo: map['timeAgo'] ?? '',

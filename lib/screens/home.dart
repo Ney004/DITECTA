@@ -12,6 +12,7 @@ import 'camera_screen.dart';
 import 'result_screen.dart';
 import '../services/database_service.dart';
 import '../models/scan_model.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -25,12 +26,30 @@ class _HomeState extends State<Home> {
   String? _userPhotoUrl;
   String _userName = "Agricultor";
   bool _isAnalyzing = false; // ← AGREGAR
+  bool _hasSynced = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _initializeModel(); // ← AGREGAR
+    _initializeModel();
+    _syncPendingIfOnline();
+  }
+
+  Future<void> _syncPendingIfOnline() async {
+    if (_hasSynced) return; // ← evita repetir
+
+    try {
+      final result = await Connectivity().checkConnectivity();
+      final hasInternet = result.any((r) => r != ConnectivityResult.none);
+      if (hasInternet) {
+        debugPrint('🔄 Verificando escaneos pendientes...');
+        await DatabaseService().syncPendingScans();
+        _hasSynced = true; // ← marca como sincronizado
+      }
+    } catch (e) {
+      debugPrint('❌ Error verificando conectividad: $e');
+    }
   }
 
   // ← AGREGAR ESTE MÉTODO
